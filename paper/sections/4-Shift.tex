@@ -1,0 +1,76 @@
+\section{Shift: Hold the Object with Two Rods}
+\label{sec:method}
+\label{sec:shift}
+
+For a shift, the rods hold the object still while the gripper translates:
+\begin{equation}
+  \mathbf r^w(s)=\mathbf r^w_0-s\,\mathbf Q(\psi_0)\mathbf d_0,\qquad s\in[0,1].
+  \label{eq:shift_path}
+\end{equation}
+The relative object displacement is then $\mathbf d_0$, and the grasp travels along the segment from $\mathbf 0$ to $-\mathbf d_0$ on the object, which must lie in the usable grasp region. For a nonzero shift, write $\hat{\mathbf d}_0=\mathbf d_0/\|\mathbf d_0\|$. The sliding grip drags the object along $-\hat{\mathbf d}_0$ through the grasp, and the rod reactions must oppose this drag. By Farkas' lemma, no small motion that every contact allows can follow the drag, and the contacts $(\mathbf p_k,\mathbf n_k)$ hold the object, exactly when nonnegative weights $\alpha_k$ satisfy
+\begin{equation}
+  \textstyle\sum_k\alpha_k(-\mathbf n_k)=\hat{\mathbf d}_0,\qquad
+  \sum_k\alpha_k\ell_k=0,
+  \label{eq:hold}
+\end{equation}
+that is, when their forces can combine along $\mathbf d_0$ through the grasp.
+
+During a shift neither the object nor the rods move, so no contact slides; friction at the rods could only enlarge the set of available reactions, and the frictionless condition \eqref{eq:hold} is sufficient. For two rods on one edge, \eqref{eq:hold} requires its normal to be $-\hat{\mathbf d}_0$ and the contacts to straddle the grasp line (\figref{fig:holding}b). On edges with independent normals, it requires $\mathbf d_0\in\operatorname{cone}(-\mathbf n_a,-\mathbf n_b)$, and the moment sum reduces to $\mathbf x\times\mathbf d_0$ for the meeting point $\mathbf x$ of the push lines, so that point must lie on the grasp line (\figref{fig:holding}c).
+
+\input{figures/holding}
+
+\subsection{Placing two rods at the trailing vertex}
+
+Choose a trailing vertex $\mathbf P_i$ maximizing $(-\mathbf d_0)^T\mathbf P_i$. Because it maximizes this projection over the outline, $-\hat{\mathbf d}_0$ lies between the normals of its two edges, so both weights in $-\hat{\mathbf d}_0=\alpha_a\mathbf n_{i-1}+\alpha_b\mathbf n_i$ are nonnegative: the adjacent inward normals span the shift direction. If $-\mathbf d_0$ is parallel to an adjacent normal, place both rods on that supporting edge. Otherwise, with $\mathbf n_a=\mathbf n_{i-1}$ and $\mathbf n_b=\mathbf n_i$, choose a meeting point on the grasp line behind the grasp and project it onto the two edge lines:
+\begin{equation}
+\begin{aligned}
+  \mathbf x&=-\lambda\,\hat{\mathbf d}_0,\qquad \lambda>\|\mathbf d_0\|,\\
+  \mathbf p_k&=\mathbf x+\bigl(\mathbf n_k^T(\mathbf P_i-\mathbf x)\bigr)\mathbf n_k,\qquad k\in\{a,b\}.
+\end{aligned}
+  \label{eq:v_construction}
+\end{equation}
+Set $\mathbf q_k=\mathbf p_k+R\mathbf n_k$. Accept a placement only if $\mathbf x$ lies on the inner side of both edges, both contacts are accessible edge-interior points, the rods pass the distance check, and the grasp segment stays in the usable grasp region. The bound on $\lambda$ keeps the grasp short of $\mathbf x$ throughout the shift. Because the trailing vertex maximizes $(-\mathbf d_0)^T\mathbf P_i$ over the whole outline, it is always a convex vertex on the convex hull of $P$, and the construction applies to nonconvex outlines unchanged; there, a projected contact may fall beyond a short adjacent edge, which the edge-interior check rejects.
+
+\subsection{One rod is not enough}
+\label{sec:minimal}
+For a single rod, \eqref{eq:hold} requires $\mathbf n=-\hat{\mathbf d}_0$ and $\ell=0$: the push line must be the grasp line. Each edge, and each vertex, supplies at most one such direction, so a polygon offers only finitely many one-rod shift directions. Even in those, the hold is indifferent. Rotating the object about the rod centre preserves the distance from that centre to the contacting edge line or vertex, so the contact is kept at every order; the drag acts at the gripper's world position along the grasp line, which passes through the rod centre, so neither force has a moment about it whatever the rotation (\figref{fig:holding}a). Two rods, by contrast, satisfy \eqref{eq:hold} in every direction for which \eqref{eq:v_construction} admits accessible, nonpenetrating contacts. Two rods are therefore the fewest that hold an arbitrary shift in one motion.
+
+Minimality is per shift. Because the grasp point stays on the object between motions, a single rod could reach other displacements by chaining shifts along the few directions it holds, re-engaging on a different edge each time. Every such shift is indifferent, however, and the chain multiplies re-engagements. Two rods hold any admissible direction in one motion and, across a vertex, with the positive stiffness established next.
+
+\subsection{How firmly two rods hold}
+With contacts on two edges of independent normals, rotation about $\mathbf x$ is neutral to first order: it enters neither rod and does not follow the drag, so \eqref{eq:hold} holds with zero first-order margin. Stability is therefore a second-order question \cite{rimon1998mobility}. With the weights of $-\hat{\mathbf d}_0=\alpha_a\mathbf n_a+\alpha_b\mathbf n_b$, let $H_k=\mathbf n_k^T(\mathbf q_k-\mathbf x)$, the signed distance from $\mathbf x$ to rod centre $k$ along $\mathbf n_k$.
+
+\begin{proposition}[Shift stiffness]
+\label{prop:stiffness}
+Let two rods hold the object at edge-interior contacts on two edges with independent normals, and let the sliding grip drag the object quasi-statically with a force along $-\hat{\mathbf d}_0$ through the grasp, as an isotropic pad centred on the grasp gives. The poses that keep both contacts form a one-parameter family in the object's rotation $\theta$, along which the meeting point crosses the drag line at the rate
+\begin{equation}
+  K_{\mathrm{sh}}=\alpha_aH_a+\alpha_bH_b
+  \label{eq:Ksh}
+\end{equation}
+per radian. When $K_{\mathrm{sh}}>0$ the drag's moment about the meeting point is restoring, and a placement error that puts $\mathbf x$ at distance $e$ from the drag line makes the object approach a tilt of about $e/K_{\mathrm{sh}}$ gradually during sliding; a finite shift need not attain that angle. The drag magnitude and friction coefficient cancel. For \eqref{eq:v_construction},
+\begin{equation}
+  K_{\mathrm{sh}}(\lambda)=R(\alpha_a+\alpha_b)-\hat{\mathbf d}_0^T\mathbf P_i-\lambda.
+  \label{eq:Ksh_lambda}
+\end{equation}
+\end{proposition}
+\begin{proof}
+Use world coordinates aligned with the object frame at the hold pose, with the gripper at the origin. With the wrist fixed, the object's rotation $\theta$ from that pose is also its in-grasp rotation. The rod centres $\mathbf q_k^w$ are fixed, and the normals are $\mathbf n_k^w(\theta)=\mathbf Q(\theta)\mathbf n_k$. While contact $k$ is maintained on its edge, the rod centre lies on the edge line offset by $R$, so push line $k$ is the line through $\mathbf q_k^w$ along $\mathbf n_k^w(\theta)$. The two independent conditions fix the translation for each $\theta$, and by the instant-centre property of Section~\ref{sec:separation} the motion is a rotation about $\mathbf x^w(\theta)=\mathbf q_k^w-H_k(\theta)\mathbf n_k^w(\theta)$. Differentiating in $\theta$, with $d\mathbf n_k^w/d\theta=(\mathbf n_k^w)^\perp$, gives $\mathbf n_k^w\times d\mathbf x^w/d\theta=-H_k$. The drag line has unit normal $\hat{\mathbf d}_0^\perp=-\alpha_a\mathbf n_a^\perp-\alpha_b\mathbf n_b^\perp$, so $\hat{\mathbf d}_0\times d\mathbf x^w/d\theta=K_{\mathrm{sh}}$ at the hold pose. Contact forces do no work along the family, so the generalized force is the drag's moment about $\mathbf x^w(\theta)$, proportional to the signed distance from $\mathbf x^w(\theta)$ to the drag line. That distance is $e$ at $\theta=0$ and decreases at the rate $K_{\mathrm{sh}}$, so the moment is proportional to $e-K_{\mathrm{sh}}\theta$: restoring, zero at $\theta\simeq e/K_{\mathrm{sh}}$, and independent of the drag magnitude. For \eqref{eq:v_construction}, $\mathbf p_k-\mathbf x\parallel\mathbf n_k$ and $\mathbf n_k^T\mathbf p_k=\mathbf n_k^T\mathbf P_i$, so $H_k=\mathbf n_k^T(\mathbf P_i-\mathbf x)+R=\mathbf n_k^T\mathbf P_i+R+\lambda\,\mathbf n_k^T\hat{\mathbf d}_0$. Summing with weights $\alpha_k$ and using $\sum_k\alpha_k\mathbf n_k=-\hat{\mathbf d}_0$ gives \eqref{eq:Ksh_lambda}.
+\end{proof}
+
+\paragraph{Approach to the tilt.}
+Proposition~\ref{prop:stiffness} gives the tilt the object tends to, not how quickly it gets there. Let $e=\hat{\mathbf d}_0\times(\mathbf g-\mathbf x)$ be the signed offset of the grasp $\mathbf g$ from the meeting point across the drag line, the sign used in the proof, and let $L$ be the distance from the grasp to $\mathbf x$ along the drag line. A rotation of the object at rate $\omega$ about $\mathbf x$ moves the object under the pad at $\omega L$ across the drag line and turns it relative to the pad at $\omega$. With the pad sliding at speed $v$ and the ellipsoidal limit surface of Section~\ref{sec:slip}, the pad's wrench then has, to first order in $\omega$, the moment $-f\omega(L^2+\rho^2)/v$ about $\mathbf x$, which balances the drag's moment $f(e-K_{\mathrm{sh}}\theta)$. Per unit of grasp travel $s$,
+\begin{equation}
+  \frac{d\theta}{ds}=\frac{e-K_{\mathrm{sh}}\theta}{L(s)^2+\rho^2},\qquad L(s)=\lambda-s,
+  \label{eq:relax}
+\end{equation}
+so the tilt relaxes toward $e/K_{\mathrm{sh}}$ at a rate set by the geometry and the pad size alone, independent of the shift speed, the drag magnitude, and the friction coefficient. Starting untilted, a shift of length $\|\mathbf d_0\|$ ends at
+\begin{equation}
+  \theta=\frac{e}{K_{\mathrm{sh}}}\left(1-\exp\left[-\frac{K_{\mathrm{sh}}}{\rho}\left(\arctan\frac{\lambda}{\rho}-\arctan\frac{\lambda-\|\mathbf d_0\|}{\rho}\right)\right]\right),
+  \label{eq:relax_end}
+\end{equation}
+whose exponent is close to $K_{\mathrm{sh}}\|\mathbf d_0\|/\bigl(\lambda(\lambda-\|\mathbf d_0\|)\bigr)$ when $\rho\ll\lambda-\|\mathbf d_0\|$. The hold acts most strongly near the end of the shift, where the grasp is closest to $\mathbf x$, and the endpoint tilt never exceeds $|e|/K_{\mathrm{sh}}$.
+
+At the trailing vertex, both $H_k$ are positive for admissible $\lambda$. Moving $\mathbf x$ toward the vertex weakens the hold at unit rate, while it lengthens the lever arm available for the following turn (Section~\ref{sec:tworod}). With both rods on one edge, the poses that keep both contacts are translations along the edge, which the drag does not excite, and rotations lift a contact against the drag.
+
+\paragraph{Other edge pairs.}
+The trailing vertex is a convenient choice, not a necessary one. Any two edges whose inward normals span the shift direction, $\mathbf d_0\in\operatorname{cone}(-\mathbf n_a,-\mathbf n_b)$, can hold it: projecting $\mathbf x=-\lambda\hat{\mathbf d}_0$ onto their edge lines gives contacts whose push lines meet at $\mathbf x$, and \eqref{eq:Ksh} applies unchanged, with $H_k=\mathbf n_k^T(\mathbf p_k-\mathbf x)+R$, again affine in $\lambda$ because $\mathbf n_k^T\mathbf p_k$ is the same for every point of edge $k$. On a nonconvex part, such pairs include the two walls of a notch or slot. There $H_k$ can be negative, and the stiffness decides: pairs with $K_{\mathrm{sh}}\leq0$ are rejected. Selecting the rods becomes a finite search over edge pairs, each checked in closed form with the same contact, access, and grasp checks.

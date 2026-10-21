@@ -1,0 +1,29 @@
+% ─────────────────────────────────────────────────────────────────────────────
+%  MYCOMMANDS.STY
+%  Project-specific commands and notation
+% ─────────────────────────────────────────────────────────────────────────────
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mycommands}[Project commands and notation]
+
+% ── References ─────────────────────────────────────────────
+\newcommand{\figref}[1]{Fig.~\ref{#1}}
+\newcommand{\tabref}[1]{Table~\ref{#1}}
+\renewcommand{\eqref}[1]{Eq.~(\ref{#1})}
+\newcommand{\sectionref}[1]{Section~\ref{#1}}
+\newcommand{\algoref}[1]{Algo.~\ref{#1}}
+
+% ── Shortcuts ─────────────────────────────
+\newcommand{\eg}{\textit{e}.\textit{g}., }
+\newcommand{\ie}{\textit{i}.\textit{e}., }
+
+% Visible figure briefs for the manuscript review version.
+\newcommand{\figuredescription}[3]{%
+    \begin{figure}[htbp]
+    \centering
+    \fbox{\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+    \small\textbf{Proposed figure.} #2
+    \end{minipage}}
+    \caption{#3}\label{#1}
+    \end{figure}%
+}

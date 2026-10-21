@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shift-then-turn"
+version = "0.1.0"
+description = "Simulations and geometric figures for 'Shift, Then Turn: Planar In-Grasp Manipulation with Two Passive Rods'."
+authors = [{ name = "Pierre-Olivier Bolduc" }, { name = "Clément Gosselin" }]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dev = ["ruff==0.17.0"]
+
+[tool.setuptools.packages.find]
+include = ["simulation*", "geometry*"]
+
+[tool.setuptools.package-data]
+"simulation" = ["model.xml"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["paper"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "E501",  # long strings (TikZ lines, captions) are kept on one line
+    "B905",  # zip() over equal-length arrays
+    "E741",  # l is the lever arm of the paper
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["simulation", "geometry"]
+
+[tool.ruff.format]
+quote-style = "single"

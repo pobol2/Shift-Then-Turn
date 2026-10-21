@@ -1,0 +1,14 @@
+% Shared drawing conventions. All geometry is schematic unless stated otherwise.
+\definecolor{objectblue}{RGB}{36,79,116}
+\definecolor{motionteal}{RGB}{0,113,119}
+\definecolor{forceorange}{RGB}{170,76,20}
+\tikzset{
+  paperfigure/.style={font=\footnotesize,>=Stealth,line width=.65pt},
+  object/.style={draw=objectblue,fill=objectblue!7},
+  feature/.style={draw=black!65,fill=black!13},
+  motion/.style={draw=motionteal,->},
+  force/.style={draw=forceorange,->,line width=.9pt},
+  guide/.style={draw=black!45,densely dashed,line width=.45pt},
+  paneltitle/.style={anchor=west,font=\small\bfseries},
+  callout/.style={fill=white,inner sep=2pt,font=\footnotesize},
+}

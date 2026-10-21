@@ -1,0 +1,37 @@
+\section{The Complete Sequence}
+\label{sec:tworod}
+
+A shift ends with both rods in contact, while a turn needs exactly one. The transition depends on the shift placement.
+
+\begin{proposition}[Turning rod and separation]
+\label{lem:separation}
+After a shift on two edges with independent normals and $H_a,H_b>0$, as at the trailing vertex, with meeting point at distance $\lambda>\|\mathbf d_0\|$, exactly one rod has $\ell>0$. If it is rod $a$,
+\begin{equation}
+  \ell=\alpha_b\,|\mathbf n_a\times\mathbf n_b|\,(\lambda-\|\mathbf d_0\|),
+  \label{eq:ell_lambda}
+\end{equation}
+and symmetrically for rod $b$; turning about it initially separates the other contact. After a shift on one edge, turning about either rod in the direction it supports drives the object into the other rod.
+\end{proposition}
+\begin{proof}
+After the shift the grasp is at $-\mathbf d_0$, and lever arms are taken about it. Relative to the new grasp, the meeting point is $\mathbf x+\mathbf d_0=-(\lambda-\|\mathbf d_0\|)\hat{\mathbf d}_0=(\lambda-\|\mathbf d_0\|)(\alpha_a\mathbf n_a+\alpha_b\mathbf n_b)$, with positive weights. Each contact satisfies $\mathbf p_k=\mathbf x+(H_k-R)\mathbf n_k$, so its lever arm is $(\mathbf p_k+\mathbf d_0)\times\mathbf n_k=(\mathbf x+\mathbf d_0)\times\mathbf n_k$:
+\[
+ (\mathbf x+\mathbf d_0)\times\mathbf n_a=(\lambda-\|\mathbf d_0\|)\,\alpha_b(\mathbf n_b\times\mathbf n_a),\qquad
+ (\mathbf x+\mathbf d_0)\times\mathbf n_b=(\lambda-\|\mathbf d_0\|)\,\alpha_a(\mathbf n_a\times\mathbf n_b).
+\]
+These have opposite signs, so exactly one rod has $\ell>0$, and its value is \eqref{eq:ell_lambda}. If it is rod $a$, then $\mathbf n_a\times\mathbf n_b>0$. A small counterclockwise rotation $d\theta$ about its centre $\mathbf q_a=\mathbf x+H_a\mathbf n_a$ moves contact $b$ by $d\theta\,(\mathbf p_b-\mathbf q_a)^\perp$, whose component along $\mathbf n_b$ is $(\mathbf p_b-\mathbf q_a)\times\mathbf n_b\,d\theta=-H_a(\mathbf n_a\times\mathbf n_b)\,d\theta<0$, so that contact separates.
+
+On one edge with normal $\mathbf n$, rod $a$ supports the turn when $\ell_a>0$, and straddling the grasp line gives the other contact $\ell_b<0$. The same small rotation about $\mathbf q_a$ moves $\mathbf p_b$ along $\mathbf n$ by $(\mathbf p_b-\mathbf q_a)\times\mathbf n\,d\theta=(\ell_a-\ell_b)\,d\theta>0$, into rod $b$, so direct turning would penetrate it; the same holds with the roles exchanged.
+\end{proof}
+
+
+Across a vertex, the robot therefore selects the rod whose moment supports the requested direction and starts the orbit directly. On one edge, it must first carry the object away and re-engage at an admissible turning contact, using the approach of Section~\ref{sec:approach}.
+
+Proposition~\ref{lem:separation} guarantees only that the other rod separates initially. In the object frame, its centre then moves on a circular arc of radius $D=\|\mathbf q_a-\mathbf q_b\|$ about the turning rod's centre, through the angle $-\Delta$, so the turn clears it exactly when this arc stays at distance at least $R$ from $P$. The check is closed-form, edge by edge, and it is the only clearance check the turn needs between the object and the rods; it matters for large turns and for nonconvex parts.
+
+\label{thm:tworod}
+The complete sequence follows. The segment \eqref{eq:shift_path} contributes the relative translation $\mathbf d_0$, provided the object remains held, and the orbit \eqref{eq:rod_path} about the rod selected by Proposition~\ref{lem:separation} contributes the rotation $\Delta$ about the new grasp, provided the grip holds the grasp point; by \eqref{eq:factor} they compose to the requested pose $(\Delta,\mathbf d)$, subject to the clearance and reach checks and, after a shift on one edge, a re-engagement. Pure shifts omit the orbit, and pure turns use any admissible one-rod contact. When the grip slips as in Proposition~\ref{prop:slip}, the result holds up to the predicted drift and under-rotation.
+
+\subsection{Choosing the meeting point}
+\label{sec:choose_lambda}
+
+The meeting point couples the two motions. By \eqref{eq:Ksh_lambda} and \eqref{eq:ell_lambda}, increasing $\lambda$ lowers the shift stiffness at unit rate and raises the turning lever arm linearly, by \eqref{eq:ell_lambda}. The two first-order error measures, the shift tilt $e/K_{\mathrm{sh}}$ per unit placement error and the turn under-rotation $\rho^2/\ell^2$ of Proposition~\ref{prop:slip}, therefore move in opposite directions along the admissible interval of $\lambda$. In the configuration simulated in Section~\ref{sec:exp_tworod}, an $80\times30$ mm plate, the meeting point must stay inside the plate, so $20.6<\lambda<41.2$ mm; along this interval $K_{\mathrm{sh}}$ falls from $27.9$ to $7.3$ mm/rad while $\ell$ rises from $0$ to $20.0$ mm. A designer free to place the rods can balance the two; with an installed pair, $\lambda$ is fixed by the spacing equation of Section~\ref{sec:installation}, and the same measures choose between its admissible roots.

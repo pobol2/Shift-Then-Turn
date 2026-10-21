@@ -1,0 +1,61 @@
+\section{Evidence}
+\label{sec:experiments}
+
+The validation addresses the tool's two roles, holding during a shift and guiding a turn, and then their composition. The available hardware trials test the turn; shifts, complete sequences, and the quantitative predictions of Sections~\ref{sec:method}--\ref{sec:tworod} are tested in simulation.
+
+\subsection{Turns on hardware and in simulation}
+\label{sec:exp_turn}
+
+The turn was run on a first-generation Kinova Jaco and in MuJoCo \cite{todorov2012mujoco} for four configurations of one elongated rectangle, with five hardware trials and one simulation run per configuration. A single bearing-mounted rod was installed once and calibrated. For each request, the rod centre was placed at $\mathbf P_i+R\mathbf n_i$, the vertex and adjacent edge normal with the largest lever arm in the requested direction; this is a vertex contact covered by the orbit argument of Section~\ref{sec:orbit}. The grasp point differed between configurations. A camera measured the initial and final orientations, with a marker on the object resolving the rectangle's symmetry, and a force/torque sensor attached to the rod detected first contact and its direction. The approach was planned as in Section~\ref{sec:approach}. The arm then followed \eqref{eq:rod_path} with fixed wrist orientation and no feedback (\figref{fig:experiment_setup}).
+
+\input{figures/experiment-sequences}
+
+\begin{table}[htbp]
+    \centering
+    \renewcommand{\arraystretch}{1.1}
+    \begin{tabular}{ccc}
+        \hline
+        Initial $\rightarrow$ target ($^{\circ}$) & Simulation error ($^{\circ}$) & Hardware MAE ($^{\circ}$, $n=5$) \\
+        \hline
+        $0\rightarrow90$ & 0.2 & 3.6 \\
+        $90\rightarrow180$ & 0.1 & 4.1 \\
+        $-90\rightarrow0$ & 0.3 & 7.5 \\
+        $180\rightarrow0$ & 0.2 & 4.9 \\
+        \hline
+    \end{tabular}
+    \caption{Absolute final-angle errors of the turn: one simulation run and five hardware trials per configuration.}
+    \label{tab:results}
+\end{table}
+
+The hardware mean absolute errors were $3.6^{\circ}$--$7.5^{\circ}$ (\tabref{tab:results}). Only these means were retained; signed errors, trial spread, pad dimensions, and grasp drift are unavailable. The trials therefore demonstrate the turn primitive, including its vertex-contact case, but cannot test the sign or magnitude of the under-rotation predicted by Proposition~\ref{prop:slip}.
+
+\subsection{Shifts and complete sequences in simulation}
+\label{sec:exp_tworod}
+
+\paragraph{Configuration and predictions.}
+The simulations use an $80\times30$ mm rectangular plate grasped at its centre, rods of radius $R=5$ mm, and the request $\Delta=\pi/2$, $\mathbf d=(5,20)$ mm. Then $\mathbf d_0=(20,-5)$ mm, the trailing vertex is $(-40,15)$ mm, and the weights are $\alpha_a\simeq0.24$ for the top edge and $\alpha_b\simeq0.97$ for the left edge. The meeting point $\mathbf x=(-36,9)$ mm ($\lambda\simeq37.1$ mm) gives rod centres $(-36,20)$ and $(-45,9)$ mm, spacing $D\simeq14.2$ mm, and $K_{\mathrm{sh}}\simeq11.4$ mm/rad. After the shift, the top rod has lever arm $\ell=16.0$ mm and drives the quarter turn, while the left rod's lever arm is $-4$ mm and its contact separates. Sections~\ref{sec:method} and~\ref{sec:turn} then predict the following. A placement error $e$ makes the plate tilt toward $e/K_{\mathrm{sh}}$, that is $5.0^{\circ}$ per millimetre, but by \eqref{eq:relax_end} a shift of $\|\mathbf d_0\|=20.6$ mm from an untilted start reaches only $32\%$ of it, $1.59^{\circ}$ per millimetre; for the stiffer placement $\lambda=30$ mm ($K_{\mathrm{sh}}=18.5$ mm/rad), it reaches $74\%$, $2.28^{\circ}$ per millimetre. A pad with limit-surface length $\rho$ (in millimetres) makes the turn under-rotate by $0.35\rho^2$ degrees, with a grasp drift of $0.098\rho^2$ mm toward the top edge.
+
+\paragraph{Model.}
+The simulations use MuJoCo 3.14 \cite{todorov2012mujoco}. The plate is 5 mm thick, has a mass of 0.2 kg, and touches only the pads and the rods, with gravity off. The gripper translates on two prescribed slide joints with its orientation locked, and two spherical pads of radius 1 mm pinch the plate with a constant force of 5 N each. Each pad is a single elliptic-cone contact with torsional friction, which gives the ellipsoidal limit surface of Section~\ref{sec:slip} with $\rho$ equal to the ratio of torsional to sliding friction; $\rho=2$ mm unless varied, which corresponds to a uniformly loaded disk pad of radius 3 mm. The rods have radius 5 mm and spin on undamped hinges. They are frictionless except in the comparison of free and fixed rods below: with rod friction, the solver transmitted a spurious tangential force of about 0.2--0.3 N through a free rod, which made runs with small rod loads depend on the time step, whereas by Section~\ref{sec:freerod} a free rod's wrench does not depend on its friction, which that comparison checks. Shifts run at 5 mm/s and turns at $10^{\circ}$/s with a time step of 1 ms. Of the 367 runs, 17 repeat a case at half or quarter time step and 11 at half speed; these repeats changed final angles by at most $0.04^{\circ}$. Holding the plate still against the rods for the 9 s of a turn moved it by $0.02^{\circ}$ and 0.03 mm, which bounds the solver's creep.
+
+\paragraph{Shift.}
+With the rods at the nominal placement, we offset the initial grasp across the drag line so that $e\in\{0,\pm0.5,\pm1\}$ mm and ran the shift alone. The endpoint tilt had the sign of $e$ and was linear in it, with slopes of $1.589^{\circ}$ and $2.267^{\circ}$ per millimetre for $\lambda=37.1$ and 30 mm (residuals below $0.01^{\circ}$), against $1.59^{\circ}$ and $2.28^{\circ}$ from \eqref{eq:relax_end} and asymptotes of $5.03^{\circ}$ and $3.10^{\circ}$, and along the shift it followed the solution of \eqref{eq:relax} to within $0.02^{\circ}$ (\figref{fig:sim_shift}). Halving the shift speed changed the endpoints by less than $0.01^{\circ}$, so the tilt is set by the distance travelled rather than by time, and a 3 s hold after the shift changed them by less than $0.04^{\circ}$. For a shift pushed straight into the top edge, with the rods offset by 0.5 mm along it, a single rod let the plate turn by $2.76^{\circ}$ and move by 0.48 mm over the 10 mm shift, whereas two rods straddling the grasp line held it within $0.003^{\circ}$ and 0.02 mm, as Section~\ref{sec:minimal} predicts.
+
+\input{figures/sim-shift}
+
+\paragraph{Turn.}
+\tabref{tab:sim_turn} and \figref{fig:sim_turn} compare the turn alone, about one rod on the top edge, with Proposition~\ref{prop:slip} and with the same limit-surface model integrated without linearization. The simulated under-rotation exceeded the integrated model by $0.05^{\circ}$--$0.09^{\circ}$ in every case but $\ell=8$ mm ($0.17^{\circ}$), a small positive offset a few times the creep floor. The first-order estimate agrees with both to within that offset up to $\rho/\ell=0.125$ and overstates the slip beyond, by $0.24^{\circ}$ at $\rho/\ell=0.19$ and $1.55^{\circ}$ at $\rho/\ell=0.31$ in the integrated model. The grasp drifted toward the contact along the edge normal as predicted, with a component along the edge below 0.03 mm. The corner contact ($\ell=20$ mm), the case run on hardware, under-rotated by $0.96^{\circ}$ against $0.90^{\circ}$ predicted.
+
+\input{tables/sim-turn}
+
+\input{figures/sim-turn}
+
+With the rod free, rod friction coefficients of 0, 0.5, and 1 gave under-rotations of $1.44^{\circ}$, $1.42^{\circ}$, and $1.44^{\circ}$ for $\rho=2$ mm and $\ell=16$ mm. With the rod welded, coefficients of 0.1, 0.2, and 0.3 gave $1.34^{\circ}$, $1.27^{\circ}$, and $1.21^{\circ}$, and the grasp also drifted along the edge, by up to 0.08 mm. Here $\mathbf n^T\mathbf p=10$ mm is positive, so a fixed rod's friction lengthens the effective lever arm of \eqref{eq:fixedrod} and reduces the slip. The bearing therefore does not make the turn more accurate; it makes the result independent of an unknown coefficient, which a fixed rod would make larger or smaller depending on its value and on the sign of $\mathbf n^T\mathbf p$. Welded rods with friction 0.5 and 1 produced stick-slip that did not converge with the time step and are not reported.
+
+\paragraph{Complete sequences.}
+In ten runs of the nominal sequence, with the engagement position perturbed by up to 0.3 mm, the grip retained the plate, and the final in-grasp rotation fell short of $90^{\circ}$ by $1.10^{\circ}$--$1.56^{\circ}$ (mean $1.32^{\circ}$). Each run's error was the tilt the plate had acquired by the end of the shift, between $-0.17^{\circ}$ and $0.31^{\circ}$, plus a turn under-rotation of $1.40^{\circ}\pm0.01^{\circ}$, against $1.41^{\circ}$ predicted. The final grasp lay 0.30--0.44 mm from its target toward the top edge, mostly the turn's drift of 0.40 mm (0.39 mm predicted). In every run, rod $b$'s force vanished 3 ms after the turn began and its gap opened within 14 ms, as Proposition~\ref{lem:separation} predicts. The one-edge sequence (a shift into the top edge against two rods, retreat, carry, re-approach to one rod with $\ell=35$ mm, and turn) ended $0.29^{\circ}$ and 0.18 mm from the request, as predicted, and the other rod was not touched after the retreat.
+
+\paragraph{Sensing at first contact.}
+The last experiment repeats the turn with $\ell=16$ mm under grasp uncertainty: a grasp position error uniform within $\pm2$ mm in each direction, an initial in-grasp orientation error uniform within $\pm3^{\circ}$, and Gaussian noise with a standard deviation of $1^{\circ}$ on the measured force direction. Each strategy ran the same 50 perturbations, and a second block added rod calibration errors uniform within $\pm0.5$ mm. Without sensing, the gripper moved to the planned engagement pose and orbited the planned centre. It touched the rod in every trial, but its angle error was dominated by the grasp offset along the contact normal, about $3.4^{\circ}$ per millimetre, close to the $1/\ell=3.6^{\circ}$ per millimetre by which an offset delays or advances the start of pivoting. Approaching until the rod's force sensor detected touch removed that dependence; the error then followed the initial orientation error (slope 0.96), offset by the turn slip. Using the measured force direction as well to estimate the initial orientation reduced the slope to 0.16, leaving a spread of $0.9^{\circ}$ set by the sensor noise around the same slip offset (\tabref{tab:sim_sensing}). Calibration errors raised its root-mean-square error from $1.6^{\circ}$ to $2.1^{\circ}$. No trial met the abort conditions, so these runs do not test them, and no strategy corrects the grasp position error, which left the final position 1.8 mm from the request on average with touch sensing.
+
+\input{tables/sim-sensing}

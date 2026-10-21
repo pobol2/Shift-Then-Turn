@@ -1,0 +1,22 @@
+% Figure 1 alone, without its caption, for the README image figures/tworod-example.png.
+% From paper/: latexmk -outdir=build readme-figure.tex
+%              pdftoppm -png -r 200 -singlefile build/readme-figure.pdf figures/tworod-example
+\documentclass[border=8pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\usepackage{mycommands}
+
+\input{figures/figure-styles}
+\renewenvironment{figure}[1][]{}{}
+\renewcommand{\centering}{}
+\renewcommand{\caption}[1]{}
+\renewcommand{\label}[1]{}
+
+\begin{document}
+\input{figures/tworod-example}
+\end{document}

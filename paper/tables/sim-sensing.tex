@@ -1,0 +1,20 @@
+% Written by python -m simulation tables from results/simulation.json; do not edit by hand.
+\begin{table}[htbp]
+    \centering
+    \renewcommand{\arraystretch}{1.1}
+    \begin{tabular}{lcccc}
+        \hline
+        Strategy & Mean ($^{\circ}$) & SD ($^{\circ}$) & RMS ($^{\circ}$) & Slope \\
+        \hline
+        Open loop & $-1.91$ & 4.10 & 4.48 & -- \\
+        Touch & $-1.35$ & 1.60 & 2.08 & 0.96 \\
+        Touch and direction & $-1.29$ & 0.90 & 1.57 & 0.16 \\
+        \hline
+        Open loop, calibration error & $-1.86$ & 4.17 & 4.53 & -- \\
+        Touch, calibration error & $-1.28$ & 2.08 & 2.43 & 0.96 \\
+        Touch and direction, calibration error & $-1.23$ & 1.74 & 2.11 & 0.17 \\
+        \hline
+    \end{tabular}
+    \caption{Final in-grasp angle error of the turn under grasp uncertainty, 50 trials per row with the same perturbations in each block. Slope: regression of the error on the injected initial orientation error.}
+    \label{tab:sim_sensing}
+\end{table}

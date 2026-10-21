@@ -1,0 +1,31 @@
+\section{Using a Fixed Installation}
+\label{sec:installation}
+
+The contact construction gives desired rod centres relative to the grasp. In a robot cell, the rods instead occupy calibrated world positions and the robot brings the object to them. This section maps the construction onto an installed pair, checks access, and gives the resulting execution procedure.
+
+\subsection{Match the installed spacing}
+\label{sec:spacing}
+
+Let the installed rod centres $\mathbf q_a^w,\mathbf q_b^w$ have spacing $D>2R$. A proper planar rigid motion maps the constructed rod centres onto them exactly when the two spacings agree. On two edges with independent normals, the construction gives $\mathbf q_k(\lambda)=\mathbf x(\lambda)+H_k(\lambda)\mathbf n_k$ with $H_k(\lambda)=\mathbf n_k^T\mathbf p_k+R+\lambda\,\mathbf n_k^T\hat{\mathbf d}_0$, affine in $\lambda$ because $\mathbf n_k^T\mathbf p_k$ is the same for every point of edge $k$ ($\mathbf n_k^T\mathbf P_i$ at the trailing vertex), so the installed pair realizes the constructed placement exactly when
+\begin{equation}
+  \bigl\|H_a(\lambda)\mathbf n_a-H_b(\lambda)\mathbf n_b\bigr\|^2=D^2
+  \label{eq:spacing}
+\end{equation}
+has an admissible root. By the law of cosines, the left side is $H_a^2+H_b^2-2H_aH_b\,\mathbf n_a^T\mathbf n_b$, a quadratic in $\lambda$. On one edge, the common offset $R\mathbf n$ cancels, and the pair requires two accessible contacts a distance $D$ apart that straddle the grasp line. The engagement pose then satisfies $\mathbf Q(\psi_0)(\mathbf q_a-\mathbf q_b)=\mathbf q_a^w-\mathbf q_b^w$ and $\mathbf r^w_0=\mathbf q_a^w-\mathbf Q(\psi_0)\mathbf q_a$, and its world paths must pass clearance and reach checks.
+
+A root is admissible only if it passes the contact and grasp checks of Section~\ref{sec:shift}; a real root alone is insufficient. In the configuration simulated in Section~\ref{sec:exp_tworod}, for instance, the installed spacing $D\simeq14.2$ mm also gives the root $\lambda\simeq59.9$ mm, which places $\mathbf x$ outside the plate and is rejected. The installed pair's spacing therefore limits the requests served by this construction.
+
+\subsection{Reach the engagement pose}
+\label{sec:approach}
+The engagement pose of Section~\ref{sec:spacing} must be reached without hitting the rods. Planning is simpler in the object frame, which moves with the gripper during the approach, so the object is fixed and the rods move: a rod of radius $R$ clears the outline exactly when its centre stays outside the offset region $P\oplus B_R$, where $B_R$ is the disk of radius $R$, the outline grown by $R$, whose boundary consists of the edges shifted outward by $R$ and arcs of radius $R$ about the convex vertices \cite{wein2007exact}. With the wrist fixed, both rod centres translate together, $\mathbf q_b(s)=\mathbf q_a(s)+(\mathbf q_b-\mathbf q_a)$, so the pair clears the object exactly when
+\begin{equation}
+  \mathbf q_a(s)\notin(P\oplus B_R)\cup\bigl((P\oplus B_R)-(\mathbf q_b-\mathbf q_a)\bigr),
+  \label{eq:cobs}
+\end{equation}
+a planar obstacle for a point (\figref{fig:approach}). Any planar planner applies; we used CGAL offsets \cite{fabri2009cgal} and OMPL's $\mathrm{RRT}^{*}$ \cite{sucan2012open}. A planned rod-centre path maps to the gripper as $\mathbf r^w(s)=\mathbf q_a^w-\mathbf Q(\psi_0)\mathbf q_a(s)$ and ends with a short straight segment in a direction with a positive component along every required contact normal (the normal itself for one contact or one edge), so that all gaps close together at engagement. In our trials, a force/torque sensor attached to the rod detected the first touch and measured its direction, from which the contact point on the object was computed; the orbit was then computed from the gripper position recorded at that touch. Without such a sensor, the engagement pose relies on the rods' calibration. In either case no sensing is used during the manipulation motion. The same planner gives the separated re-approach after a shift on one edge.
+
+\input{figures/approach}
+
+\subsection{Execution procedure}
+\label{sec:execution}
+For each request, compute $\mathbf d_0$ from \eqref{eq:factor}, identify the trailing vertex or supporting edge, or another admissible edge pair (Section~\ref{sec:method}), and solve the spacing equation or select the one-edge contacts. Reject placements that fail the contact, grasp travel, clearance, or robot reach checks, including the second rod's arc during the turn (Section~\ref{sec:tworod}), and choose among the remaining roots as in Section~\ref{sec:choose_lambda}. Map an accepted placement to its engagement pose and plan the approach. Execute the straight shift, then the orbit about the turning rod of Proposition~\ref{lem:separation}, with a separated re-approach when the shift used one-edge contacts. During these manipulation motions the wrist stays fixed and the nominal path construction requires no feedback.

@@ -1,0 +1,55 @@
+\begin{figure}[htbp]
+\centering
+% Computed with the hold condition and the trailing-vertex construction on the pentagon of Fig. 1 (mm, 1 mm = 0.042 cm).
+% Written by python -m geometry; do not edit coordinates by hand.
+\begin{tikzpicture}[paperfigure,
+  gripbody/.style={fill=black!55,draw=black!80,line width=.4pt},
+  grippad/.style={fill=black!75,draw=black}]
+\newcommand{\gripper}[3]{%
+  \begin{scope}[shift={(#1,#2)},#3]
+    \fill[gripbody,rotate=30] (-3,0) rectangle (3,-24);
+    \fill[grippad] (0,0) circle[radius=4];
+    \fill[white] (0,0) circle[radius=1];
+  \end{scope}}
+\path[use as bounding box] (0,0.15) rectangle (15.6,3.55);
+\node[paneltitle] at (0.0,3.35) {(a) One rod};
+\begin{scope}[shift={(2.474,1.321)},x=0.042cm,y=0.042cm]
+\draw[object] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+  \draw[guide] (2.76,-17.79) -- (-5.36,34.57);
+  \draw[feature] (-3.68,23.70) circle[radius=5]; \fill (-3.68,23.70) circle(.6pt);
+  \draw[force] (-5.82,37.53) -- (-2.99,19.25);
+  \draw[->,black!70,line width=.5pt] ([shift={(43.8:10)}]-3.68,23.70) arc[start angle=43.8,end angle=153.8,radius=10];
+  \gripper{0}{0}{}
+  \draw[motion,line width=.9pt] (-0.77,4.94) -- (-1.84,11.86);
+\end{scope}
+\node[paneltitle] at (5.2,3.35) {(b) Same edge};
+\begin{scope}[shift={(7.674,1.321)},x=0.042cm,y=0.042cm]
+\draw[object] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+  \draw[guide] (2.76,-17.79) -- (-5.36,34.57);
+  \draw[feature] (12.13,26.15) circle[radius=5]; \fill (12.13,26.15) circle(.6pt);
+  \draw[force] (9.99,39.98) -- (12.82,21.70);
+  \draw[feature] (-19.49,21.24) circle[radius=5]; \fill (-19.49,21.24) circle(.6pt);
+  \draw[force] (-21.63,35.08) -- (-18.80,16.80);
+  \gripper{0}{0}{}
+  \draw[motion,line width=.9pt] (-0.77,4.94) -- (-1.84,11.86);
+\end{scope}
+\node[paneltitle] at (10.4,3.35) {(c) Across a vertex};
+\begin{scope}[shift={(13.187,1.321)},x=0.042cm,y=0.042cm]
+\draw[object] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+  \fill[forceorange!18] (-33.63,4.99) -- ([shift={(-81.2:12)}]-33.63,4.99) arc[start angle=-81.2,end angle=11.3,radius=12] -- cycle;
+  \draw[guide] (-47.48,7.04) -- (29.68,-4.40);
+  \draw[guide] (-35.30,15.75) -- (-33.17,2.02);
+  \draw[feature] (-35.76,18.72) circle[radius=5]; \fill (-35.76,18.72) circle(.6pt);
+  \draw[force] (-37.60,30.58) -- (-35.07,14.27);
+  \draw[guide] (-40.18,3.68) -- (-30.69,5.58);
+  \draw[feature] (-43.12,3.09) circle[radius=5]; \fill (-43.12,3.09) circle(.6pt);
+  \draw[force] (-54.88,0.74) -- (-38.70,3.97);
+  \fill (-33.63,4.99) circle(1.2pt); \node[anchor=south west,inner sep=1pt] at (-32.83,5.79) {$\mathbf x$};
+  \gripper{0}{0}{}
+  \draw[motion,line width=.9pt] (-3.96,0.59) -- (-12.86,1.91);
+\end{scope}
+\draw[black!15] (5.05,0.15) -- (5.05,3.45); \draw[black!15] (10.25,0.15) -- (10.25,3.45);
+\end{tikzpicture}
+\caption{Holding the plate during a shift. Orange arrows: rod forces along their push lines; teal arrows: gripper motion, which drags the plate through the grasp; dashed lines: grasp line and push lines. (a)~One rod holds only when its push line coincides with the grasp line, allowing finitely many shift directions. The hold has no rotational stiffness: the plate can turn freely about the rod centre (curved arrow; Section~\ref{sec:minimal}). (b)~For a shift straight into an edge, two rods on that edge straddle the grasp line. (c)~Across the trailing vertex, the two push lines meet at $\mathbf x$ on the grasp line, as placed by \eqref{eq:v_construction}. Their forces span the shaded cone, and the hold has positive second-order stiffness $K_{\mathrm{sh}}>0$ (Proposition~\ref{prop:stiffness}).}
+\label{fig:holding}
+\end{figure}

@@ -1,0 +1,46 @@
+\section{Introduction}
+\label{sec:intro}
+
+Most industrial robots use simple end-effectors, such as parallel grippers, because they are reliable, inexpensive, and easy to control. They suffice for pick-and-place, but once an object is grasped they offer little control over its pose within the grasp. That pose often matters. A part picked from a bin wherever it was easiest to grasp must frequently be presented to a fixture, a machine, or an assembly in one particular grasp; today this requires a regrasp station, a dedicated jig, or a more dexterous hand. A gripper that could adjust its grasp in place would remove that step, and it would also relax the constraints on the initial grasp.
+
+People face the same limitation with one hand and overcome it with a second hand, even one that does very little. Holding an object still while the fingers slide along it, or giving it a point to pivot about, is often enough. A passive tool in the workspace can play this role: contact with the tool holds or guides the object while the robot moves the gripper. This makes the workspace a design variable for in-hand manipulation. The question is then what geometry to add, where to place it, and how to move the robot so that a desired change of grasp follows from those contacts. Our thesis is that this question has a closed-form answer. Instead of giving a simple gripper more sensing, actuation, or planning, we give its workspace the geometry it is missing, and we show that this geometry can be designed in closed form.
+
+External assistance is an established route to dexterity with simple grippers. Extrinsic dexterity uses forces from gravity, inertia, and environmental contacts to change an object's pose within the grasp \cite{dafle2014extrinsic}. Prehensile pushing constructs such changes by pressing a grasped object against fixed features in the environment \cite{chavan2015prehensile,chavan2018stable}; sampling-based planners and motion cones chain these pushes into regrasps, including motions that combine sliding and turning, by modelling the frictional contacts between gripper, object, and pusher \cite{chavan2017sampling,chavan2020planar}. Fixtureless fixturing pushes the object against an environmental feature that holds it still while the fingers slide over it \cite{chavan2018fixtureless}, the closest precedent for the shift studied here. Pivoting against the environment and shared grasping reorient objects through contact with a support \cite{hou2019reorienting,hou2020manipulation}, inertial loads can drive in-grasp sliding \cite{shi2017dynamic}, and visual and tactile feedback can regulate pivoting \cite{karayiannidis2016adaptive,toskov2023hand,kim2024texterity}. These methods establish that interaction with the environment extends a gripper's capabilities. They take the environment as given, however, and obtain the motion from friction coefficients, grip-force values, numerical planning, or feedback (\tabref{tab:positioning}).
+
+\label{sec:related}
+Designing the constraints themselves has a long history. Passive fences orient parts, modular fixtures constrain them through deliberately chosen contact geometry, and sensorless orienting uses geometric contact sequences \cite{wiegley1997complete,brost1996complete,goldberg1993orienting,asada1985fixturing}; their objective is a final part pose, not a change of pose while the part remains in a gripper. Effector form design derives a finger's shape from the motion it must produce \cite{rodriguez2013effector}, and bearings or passive rollers in the fingers make pivoting and sliding within the grasp mechanically easier \cite{carlisle1994pivoting,fisk2026rollers}; these approaches modify the gripper, whereas we leave it unchanged and design a fixture in the workspace. Open-loop pivoting shows that a simple gripper can reorient an object without feedback \cite{holladay2015general,cruciani2017hand}. Our earlier assistive tool used two planes with their angle selected through simulation \cite{bolduc2023inhand}; here the tool's geometry and placement follow from analysis instead. The analysis draws on classical planar contact mechanics: instantaneous rotation centres on contact normals \cite{mason2001mechanics}, first- and second-order contact constraints \cite{ohwovoriole1981extension,rimon1998mobility}, the mechanics of pushing \cite{mason1986mechanics,peshkin1988planning,lynch1996stable}, and limit surfaces for sliding contact patches \cite{goyal1991planar,howe1996practical,xydas1999modeling}. These ingredients are classical; what has been missing is their use as a design method for workspace geometry. Among the approaches compared in \tabref{tab:positioning}, ours is the only one that designs the workspace and changes the grasp in place, and the only one in which no friction coefficient, grip-force value, numerical planner, or feedback enters the manipulation motion.
+
+\begin{table}[htbp]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.15}
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.3cm}*{5}{>{\centering\arraybackslash}p{1.62cm}}>{\centering\arraybackslash}p{2.0cm}}
+        \hline
+        Approach & Same gripper & Workspace designed & Grasp changed in place & Friction or force in the plan & Feedback in motion & Motion computed by \\
+        \hline
+        Fences, modular fixtures, sensorless orienting \cite{wiegley1997complete,brost1996complete,goldberg1993orienting} & yes & yes & no & -- & no & complete search \\
+        Prehensile pushing, motion cones, fixtureless fixturing \cite{chavan2015prehensile,chavan2017sampling,chavan2018fixtureless,chavan2020planar} & yes & no & yes & yes & no & sampling, optimization \\
+        Pivoting, shared grasping \cite{hou2019reorienting,hou2020manipulation} & yes & no & yes & yes & force control & contact-mode planning \\
+        Feedback-regulated pivoting \cite{karayiannidis2016adaptive,toskov2023hand,kim2024texterity} & yes & no & yes & estimated & vision, touch & controller \\
+        Rollers or bearings in the fingers \cite{carlisle1994pivoting,fisk2026rollers} & no & no & yes & varies & varies & varies \\
+        \textbf{Two free rods (this work)} & \textbf{yes} & \textbf{yes} & \textbf{yes} & \textbf{no} & \textbf{no} & \textbf{closed form} \\
+        \hline
+    \end{tabular}
+    \caption{What approaches to changing a grasp with a simple gripper require. ``Friction or force in the plan'': whether a friction coefficient or a grip-force value is needed to compute the motion. ``Feedback in motion'': sensing used while the object is being manipulated, not to locate it beforehand.}
+    \label{tab:positioning}
+\end{table}
+
+The proposed tool consists of two rods that spin freely on bearings (\figref{fig:tworod}). The gripper pinches a planar object across its thickness and first brings it against both rods. During a shift, the rods hold the object still while the gripper slides along it. During a turn, the gripper orbits one rod and the object pivots within the grasp. The wrist orientation stays fixed during each manipulation motion. A requested planar displacement is decomposed into a shift followed by a turn; when both rods contact the same edge, the object is carried away and re-engaged before turning. The tool amounts to two pins on bearings: it leaves the gripper and its controller unchanged, and the manipulation motions themselves need no sensing.
+
+The paper makes four contributions:
+\begin{itemize}
+    \item \emph{A design principle for passive in-grasp manipulation.} We show why passive contacts with a fixed wrist cannot uniquely determine simultaneous sliding and turning within the grasp. This motivates separating a planar change of grasp into a shift and a turn (Section~\ref{sec:design}).
+    \item \emph{A minimal tool with a closed-form design.} We establish that two rods are the minimum needed to support an arbitrary shift in one motion, and show how the same pair supports a subsequent turn. We derive the rod placements, gripper paths, and conditions under which an installed pair can perform a requested change of grasp (Sections~\ref{sec:method}, \ref{sec:tworod}, and~\ref{sec:installation}).
+    \item \emph{Motion computation without friction or force parameters.} The manipulation motions require neither friction coefficients nor grip-force values as planning inputs. Freely rotating rods also allow grasp slip during a turn to be predicted from the finger-pad size and the lever arm (Section~\ref{sec:turn}).
+    \item \emph{Experimental and simulation evidence.} We validate turns on hardware and evaluate shifts and complete shift--turn sequences in simulation, comparing the results with the analytical predictions (Section~\ref{sec:experiments}).
+\end{itemize}
+
+Execution assumes a known initial grasp pose and grip settings that retain the object while permitting the required sliding and pivoting; contact, grasp travel, clearance, and robot reach must also be checked. Hardware trials with a single rod demonstrate the turn in the vertex-contact case covered by the analysis, and shifts and complete sequences are tested in simulation.
+
+\input{figures/tworod-example}

@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use these simulations or their results, please cite this software."
+title: "Shift, Then Turn: Planar In-Grasp Manipulation with Two Passive Rods - Simulations and Paper Source"
+abstract: "MuJoCo simulations of shifts, turns and complete sequences with two passive rods, and the LaTeX source of the paper."
+authors:
+  - family-names: Bolduc
+    given-names: Pierre-Olivier
+  - family-names: Gosselin
+    given-names: Clément
+date-released: 2026-10-21
+version: 0.1.0
+license: MIT
+type: software

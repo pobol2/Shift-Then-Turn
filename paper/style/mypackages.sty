@@ -1,0 +1,55 @@
+% ─────────────────────────────────────────────────────────────────────────────
+%  MYPACKAGES.STY
+%  Packages and document-level formatting/settings
+% ─────────────────────────────────────────────────────────────────────────────
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mypackages}[Packages and document settings]
+
+% ── Encoding & fonts ──────────────────────────────────────────────────────────
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{lmodern}
+
+% ── Page layout ───────────────────────────────────────────────────────────────
+\RequirePackage[
+  a4paper,
+  margin=1in,
+  headheight=14pt
+]{geometry}
+
+% ── Mathematics ───────────────────────────────────────────────────────────────
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{bm}
+
+% ── Graphics & figures ────────────────────────────────────────────────────────
+\RequirePackage{graphicx}
+\RequirePackage{caption}
+\RequirePackage{placeins}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+
+% ── Languages ─────────────────────────────────────────────────────────────────
+\RequirePackage[english]{babel}
+
+% ── Algorithms ────────────────────────────────────────────────────────────────
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\RequirePackage[numbers, sort&compress]{natbib}
+
+% ── Misc utilities ────────────────────────────────────────────────────────────
+\RequirePackage{enumitem}
+\RequirePackage{array}
+\setlist[itemize]{noitemsep, topsep=2pt}
+\setlist[enumerate]{noitemsep, topsep=2pt}
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\RequirePackage[
+  colorlinks = true,
+  linkcolor  = black,
+  citecolor  = black,
+  urlcolor   = black
+]{hyperref}

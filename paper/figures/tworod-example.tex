@@ -1,0 +1,74 @@
+\begin{figure}[htbp]
+\centering
+% Computed from the shift and turn constructions for a convex pentagon (mm, 1 mm = 0.05 cm):
+% Delta = 80 deg, d = (6,18) mm, R = 5 mm, lambda = 34 mm. Written by python -m geometry; do not edit coordinates by hand.
+\begin{tikzpicture}[paperfigure,
+  gripbody/.style={fill=black!55,draw=black!80,line width=.4pt},
+  grippad/.style={fill=black!75,draw=black},
+  ghostobj/.style={draw=objectblue!60,densely dashed,fill=none,line width=.5pt}]
+\newcommand{\gripper}[3]{%
+  \begin{scope}[shift={(#1,#2)},#3]
+    \fill[gripbody,rotate=30] (-3,0) rectangle (3,-24);
+    \fill[grippad] (0,0) circle[radius=4];
+    \fill[white] (0,0) circle[radius=1];
+  \end{scope}}
+\path[use as bounding box] (0,-0.10) rectangle (15.6,11.1);
+
+\node[paneltitle] at (0,10.9) {(a) Engage};
+\begin{scope}[shift={(4.084,9.114)},x=0.05cm,y=0.05cm]
+\draw[ghostobj] (-28.26,-21.01) -- (35.74,-25.01) -- (51.74,-2.01) -- (23.74,17.99) -- (-34.26,8.99) -- cycle;
+\draw[object] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+  \draw[feature] (-35.76,18.72) circle[radius=5]; \fill (-35.76,18.72) circle(.6pt);
+  \draw[feature] (-43.12,3.09) circle[radius=5]; \fill (-43.12,3.09) circle(.6pt);
+  \draw[motion,line width=.9pt] (30.00,-26.00) -- (20.16,-19.13);
+  \gripper{0.00}{0.00}{}
+  \node[anchor=south] at (-35.76,24.22) {$a$};
+  \node[anchor=east] at (-48.62,3.09) {$b$};
+\end{scope}
+\node[paneltitle] at (8.0,10.9) {(b) Shift};
+\begin{scope}[shift={(11.898,9.071)},x=0.05cm,y=0.05cm]
+\draw[object] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+  \draw[guide] (-39.57,5.87) -- (25.72,-3.81);
+  \node[anchor=south west,inner sep=1pt,text=black!60] at (11.72,-2.31) {grasp line};
+  \draw[feature] (-35.76,18.72) circle[radius=5]; \fill (-35.76,18.72) circle(.6pt);
+  \draw[feature] (-43.12,3.09) circle[radius=5]; \fill (-43.12,3.09) circle(.6pt);
+  \draw[guide] (-35.00,13.78) -- (-33.63,4.99);
+  \draw[force] (-37.45,29.59) -- (-35.07,14.27);
+  \draw[guide] (-38.21,4.07) -- (-33.63,4.99);
+  \draw[force] (-53.90,0.93) -- (-38.70,3.97);
+  \fill (-33.63,4.99) circle(1.2pt); \node[anchor=north west,inner sep=1pt] at (-32.83,4.19) {$\mathbf x$};
+  \gripper{0.00}{0.00}{,opacity=.28}
+  \draw[motion,line width=1pt] (-2.97,0.44) -- (-15.80,2.34);
+  \node[anchor=south,inner sep=2pt] at (-9.38,3.39) {$-\mathbf d_0$};
+  \gripper{-18.77}{2.78}{}
+\end{scope}
+\node[paneltitle] at (0,6.764132811653769) {(c) Turn};
+\begin{scope}[shift={(4.278,1.647)},x=0.05cm,y=0.05cm]
+\draw[ghostobj] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+\draw[object,fill opacity=.45,draw opacity=.45] (-11.45,-7.51) -- (40.14,30.56) -- (37.62,58.47) -- (3.31,55.79) -- (-35.33,11.61) -- cycle;
+\draw[object] (-0.28,14.25) -- (14.77,76.58) -- (-5.10,96.33) -- (-29.66,72.23) -- (-30.87,13.55) -- cycle;
+  \draw[feature] (-35.76,18.72) circle[radius=5]; \fill (-35.76,18.72) circle(.6pt);
+  \draw[feature] (-43.12,3.09) circle[radius=5]; \fill (-43.12,3.09) circle(.6pt);
+  \draw[motion,line width=1pt] (-18.77,2.78) arc[start angle=-43.156,end angle=36.844,radius=23.296];
+  \gripper{-18.77}{2.78}{,opacity=.28}
+  \gripper{-12.50}{17.43}{,opacity=.28}
+  \gripper{-17.12}{32.69}{}
+  \node[anchor=east] at (-41.26,21.72) {$a$};
+  \node[anchor=east] at (-48.62,3.09) {$b$};
+\end{scope}
+\node[paneltitle] at (8.0,6.764132811653769) {(d) Result};
+\begin{scope}[shift={(11.550,3.282)},x=0.05cm,y=0.05cm]
+\draw[ghostobj] (-34.00,-17.00) -- (30.00,-21.00) -- (46.00,2.00) -- (18.00,22.00) -- (-40.00,13.00) -- cycle;
+\draw[object] (16.84,-18.44) -- (31.89,43.90) -- (12.02,63.65) -- (-12.54,39.55) -- (-13.75,-19.13) -- cycle;
+  \fill[objectblue] (6.00,18.00) circle(1.3pt);
+  \draw[motion,line width=.9pt] (0,0) -- (5.52,16.56);
+  \node[anchor=east,inner sep=2pt] at (3.30,9.90) {$\mathbf d$};
+  \draw[motion,line width=.9pt] (26,-4) arc[start angle=-10,end angle=70,radius=26];
+  \node[anchor=west] at (31,14) {$\Delta=80^\circ$};
+  \gripper{0.00}{0.00}{}
+\end{scope}
+\draw[black!15] (7.8,-0.10) -- (7.8,11.0); \draw[black!15] (0,7.01) -- (15.6,7.01);
+\end{tikzpicture}
+\caption{Changing the grasp with two rods, using the constructions of Sections~\ref{sec:method} and~\ref{sec:turn}. (a)~The gripper brings the plate against two installed rods that spin freely on bearings. Dark disk: gripper pad; bar: wrist, whose orientation stays fixed throughout. (b)~The rod forces (orange) act along push lines meeting at $\mathbf x$ on the grasp line: the plate stays still while the gripper slides by $-\mathbf d_0$. (c)~The gripper orbits rod~$a$; the plate pivots within the grip, turns by $\Delta$, and separates from rod~$b$. (d)~In the gripper frame, the plate has turned by $\Delta=80^\circ$ and shifted by the requested $\mathbf d=\mathbf Q(\Delta)\mathbf d_0$. Teal arrows: gripper motion in (a--c), relative object displacement and rotation in (d); dashed outlines: initial poses.}
+\label{fig:tworod}
+\end{figure}

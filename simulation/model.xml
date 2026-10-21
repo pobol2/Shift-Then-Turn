@@ -1,0 +1,48 @@
+<mujoco model="two_fixed_rods">
+  <compiler angle="radian" />
+  <option timestep="0.001" gravity="0 0 0" integrator="Euler" solver="Newton" iterations="50" tolerance="1e-10" />
+  <visual>
+    <global offwidth="900" offheight="700" />
+    <headlight ambient="0.5 0.5 0.5" />
+  </visual>
+  <default>
+    <geom solref="0.005 1" solimp="0.95 0.99 0.001" condim="1" friction="0 0 0" />
+  </default>
+  <worldbody>
+    <light pos="0 0 1" />
+    <geom name="background" type="plane" size="0.3 0.3 0.01" rgba="0.94 0.94 0.94 1" contype="0" conaffinity="0" />
+    <body name="object" pos="0 0 0.015">
+      <joint name="object_x" type="slide" axis="1 0 0" />
+      <joint name="object_y" type="slide" axis="0 1 0" />
+      <joint name="object_theta" type="hinge" axis="0 0 1" />
+      <geom name="object_geom" type="box" size="0.05 0.03 0.01" mass="0.2" rgba="0.15 0.5 0.85 1" />
+      <site name="orientation" pos="0.04 0 0.011" size="0.003" rgba="1 1 1 1" />
+    </body>
+    <body name="rod_lower_body" pos="0.06 -0.02 0.025">
+      <site name="rod_lower_loadcell" pos="0 0 -0.025" size="0.002" rgba="0.8 0.1 0.1 1" />
+      <body name="rod_lower_rotor">
+        <joint name="rod_lower_spin" type="hinge" axis="0 0 1" damping="0" frictionloss="0" armature="1e-5" />
+        <geom name="rod_lower" type="cylinder" size="0.01 0.025" mass="0.02" condim="1" friction="0 0 0" rgba="0.25 0.25 0.3 1" />
+        <geom name="rod_lower_marker" type="box" pos="0.005 0 0.026" size="0.004 0.001 0.001" rgba="1 0.8 0 1" contype="0" conaffinity="0" mass="0" />
+      </body>
+    </body>
+    <body name="rod_upper_body" pos="0.06 0.02 0.025">
+      <site name="rod_upper_loadcell" pos="0 0 -0.025" size="0.002" rgba="0.8 0.1 0.1 1" />
+      <body name="rod_upper_rotor">
+        <joint name="rod_upper_spin" type="hinge" axis="0 0 1" damping="0" frictionloss="0" armature="1e-5" />
+        <geom name="rod_upper" type="cylinder" size="0.01 0.025" mass="0.02" condim="1" friction="0 0 0" rgba="0.25 0.25 0.3 1" />
+        <geom name="rod_upper_marker" type="box" pos="0.005 0 0.026" size="0.004 0.001 0.001" rgba="1 0.8 0 1" contype="0" conaffinity="0" mass="0" />
+      </body>
+    </body>
+    <body name="gripper" mocap="true" pos="0 0 0.03">
+      <geom name="pad_region" type="box" size="0.005 0.005 0.001" rgba="0.9 0.45 0.05 0.25" contype="0" conaffinity="0" />
+      <site name="gripper_center" type="sphere" size="0.002" rgba="0.9 0.3 0 1" />
+    </body>
+  </worldbody>
+  <sensor>
+    <force name="rod_lower_load_force" site="rod_lower_loadcell" />
+    <torque name="rod_lower_load_torque" site="rod_lower_loadcell" />
+    <force name="rod_upper_load_force" site="rod_upper_loadcell" />
+    <torque name="rod_upper_load_torque" site="rod_upper_loadcell" />
+  </sensor>
+</mujoco>

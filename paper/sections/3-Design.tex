@@ -1,0 +1,36 @@
+\section{Passive Contacts Require a Shift, Then a Turn}
+\label{sec:design}
+
+The tool must provide two capabilities: hold the object while the gripper slides, and guide a turn while the grasp point is retained. Rods provide localized contacts that can be positioned on different edges of the object. This section fixes the contact model and shows that a passive tool can determine these two motions only one at a time.
+
+\subsection{Geometric contact model}
+\label{sec:contact_model}
+
+The outline $P$ is traversed counterclockwise, with vertices $\mathbf P_i$; edge $i$ runs from $\mathbf P_i$ to $\mathbf P_{i+1}$ and has outward unit normal $\mathbf n_i$. For a planar vector $\mathbf a$, $\mathbf a^\perp=\mathbf Q(\pi/2)\mathbf a$ is $\mathbf a$ turned by a quarter turn, and $\mathbf a\times\mathbf b=(\mathbf a^\perp)^T\mathbf b$. A rod has radius $R$ and a fixed axis normal to the manipulation plane. It touches $P$ at a point $\mathbf p$ with contact normal $\mathbf n$: the edge normal on an edge, or, at a convex vertex, any unit vector between the normals of its two edges. The rod centre satisfies
+\begin{equation}
+  \mathbf q=\mathbf p+R\mathbf n,\qquad \operatorname{dist}(\mathbf q,P)=R.
+  \label{eq:rod_center}
+\end{equation}
+The distance check excludes penetration elsewhere. We also require each rod to touch $P$ at a single point, which excludes a rod wedged against two features at once and, together with the distance check, concavities narrower than the rod. Then $\operatorname{dist}(\cdot,P)$ is differentiable at $\mathbf q$ with unit gradient $\mathbf n$, for convex and nonconvex outlines alike. A rod spinning freely on its bearing exerts no tangential force, so its reaction acts along $-\mathbf n$ on the push line through $\mathbf p$ and $\mathbf q$. Its moment about the grasp, per unit force and positive counterclockwise, is the lever arm
+\begin{equation}
+  \ell=\mathbf p\times(-\mathbf n).
+  \label{eq:edge_identity}
+\end{equation}
+A shift needs the rods' moments to cancel; a turn needs one rod with $\ell>0$.
+
+\subsection{What passive contacts can prescribe}
+\label{sec:separation}
+
+A rod's surface moves only tangentially, whether the rod is fixed or spins on its bearing, so an engaged contact requires the object point at $\mathbf p$ not to move along $\mathbf n$. A small rotation of the object about some point moves $\mathbf p$ perpendicular to the line joining that point to $\mathbf p$, which has no component along $\mathbf n$ exactly when the point lies on the push line. Hence, if the object turns in the world about some point, the push line of every engaged contact passes through that point: the classical construction of instantaneous rotation centres from contact normals \cite{mason2001mechanics}. A rotation about that point neither enters nor leaves any contact. If the grasp point may also slide on the object, nothing else constrains the object's pose relative to the gripper, so the gripper path does not determine the turning angle. The motion is determined only in two cases: the object stays still in the world, giving a pure shift, or the grip holds the grasp point while a rod contact is maintained, giving a pure turn (Section~\ref{sec:turn}). A passive tool can therefore either hold the object while the grasp slides, or guide a rotation while the grasp holds, but not both at once. This does not prohibit combined motions obtained using additional mechanical information or feedback: motion cones, for instance, plan combined sliding and turning against fixed pushers from models of contact friction and grip force \cite{chavan2020planar}. It rules them out for a tool planned from geometry alone, and it is the price paid for a plan in which no friction coefficient or force value appears.
+
+\subsection{Operating principle: hold, then guide}
+
+In the shift mode, the object remains still in the world while the gripper translates along it. The grasp moves to a new point on the object, producing a relative displacement. In the turn mode, the grip holds that grasp point while the gripper follows an arc about one rod. The object pivots within the fixed-orientation grip, producing a relative rotation. We execute the shift first and the turn second, with the requested pose factored as
+\begin{equation}
+  \begin{bmatrix}\mathbf Q(\Delta)&\mathbf d\\\mathbf 0^T&1\end{bmatrix}
+  =\begin{bmatrix}\mathbf Q(\Delta)&\mathbf 0\\\mathbf 0^T&1\end{bmatrix}
+   \begin{bmatrix}\mathbf I&\mathbf d_0\\\mathbf 0^T&1\end{bmatrix},
+  \qquad \mathbf d_0=\mathbf Q(\Delta)^T\mathbf d.
+  \label{eq:factor}
+\end{equation}
+Thus the shift vector is $\mathbf d_0$, which the subsequent turn rotates into the requested final displacement $\mathbf d$. Section~\ref{sec:method} shows that holding an arbitrary shift requires two rods, Section~\ref{sec:turn} shows that a turn requires one, and Section~\ref{sec:tworod} shows how the same pair passes from the first mode to the second.

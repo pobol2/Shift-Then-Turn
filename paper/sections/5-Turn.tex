@@ -1,0 +1,48 @@
+\section{Turn: Orbit One Free Rod}
+\label{sec:turn}
+\label{sec:rod}
+
+After the shift, the tool must let the object turn while the grip holds the grasp point. Only one rod is needed for this motion; the second must remain clear. A rod pushes in the requested counterclockwise direction when its lever arm \eqref{eq:edge_identity} is positive. On an edge, $\ell$ is affine in $\mathbf p$. At a convex vertex $\mathbf P_i$, $\ell=\mathbf n\times\mathbf P_i$ is linear in the contact normal between the vertex's two edge normals. Candidate contacts are therefore the endpoints of accessible edge intervals, which include vertex contacts with an edge normal, and at most one other normal per vertex, perpendicular to $\mathbf P_i$. Candidates are ranked by $\ell$, for the reason given in Section~\ref{sec:slip}. A candidate always exists: the vertex $\mathbf P_i$ farthest from the grasp maximizes $\mathbf P_i^T\mathbf p$ over the outline, so $\mathbf P_i$ lies strictly between the normals of its two edges, and their lever arms $\mathbf n_{i-1}\times\mathbf P_i$ and $\mathbf n_i\times\mathbf P_i$ at the vertex have opposite signs. One of them is positive before access and clearance checks.
+
+\subsection{Orbit realization}
+\label{sec:orbit}
+
+With the rod centre at $\mathbf q^w=\mathbf r^w_0+\mathbf Q(\psi_0)\mathbf q$, the gripper follows the orbit
+\begin{equation}
+    \mathbf r^w(s)=\mathbf q^w+\mathbf Q(s\Delta)(\mathbf r^w_0-\mathbf q^w),\qquad s\in[0,1].
+    \label{eq:rod_path}
+\end{equation}
+For an installed rod, $\mathbf q^w$ is its calibrated centre, and the engagement pose is chosen to satisfy this relation.
+
+Let $\theta$ be the in-grasp rotation. With the grasp point held, the rod centre lies at $\mathbf Q(\psi_0+\theta)^T(\mathbf q^w-\mathbf r^w(s))$ in the object frame. Along \eqref{eq:rod_path}, $\mathbf q^w-\mathbf r^w(s)=\mathbf Q(s\Delta)\mathbf Q(\psi_0)\mathbf q$, so $\theta=s\Delta$ places it at $\mathbf q$ for every $s$. The rod centre is thus stationary in the object frame: the contact keeps its material point and normal, at an edge or at a vertex alike, and the object's in-grasp rotation equals the orbit angle. This continuation is unique, because the contact condition $\operatorname{dist}=R$ changes at the rate $-\mathbf q\times\mathbf n=\ell\neq0$ per radian of $\theta$ (the rod centre moves by $-\mathbf q^\perp$ and the distance has gradient $\mathbf n$), and advancing $s$ changes it at the rate $-\Delta\ell<0$, so the rod initially loads the contact.
+
+
+Because the rod centre is fixed in the object frame, its distance to every point of the object is constant during the orbit. If the turning rod clears the object at engagement, it therefore clears it throughout the turn, whatever the object's shape, and a nonconvex outline needs no additional check for this rod. The vertex case matters in practice. Our hardware trials placed the rod centre at $\mathbf P_i+R\mathbf n_i$, a vertex contact with an adjacent edge normal (Section~\ref{sec:exp_turn}), and the argument above covers it without change.
+
+\subsection{Why the rod should spin freely}
+\label{sec:freerod}
+
+The orbit argument is kinematic: it holds for a fixed rod as well. The bearing matters for the load the grip must carry. Along the orbit, the object turns counterclockwise in the world about the rod centre, so its contact point slides around the rod, along $-\mathbf n^\perp$, by $R$ per radian. A rod free to spin turns with it and, with a frictionless bearing, transmits no tangential force. Its wrench is then a force along $-\mathbf n$ through the rod centre, whose moment about the grasp, per unit force, is $\ell$ in the turning direction, whatever the friction at the contact. On a fixed rod the contact slides, and Coulomb friction adds, per unit normal force, the tangential force $\mu_r\mathbf n^\perp$ opposing that sliding. Its moment in the turning direction is $\mu_r\,\mathbf n^T\mathbf p$, so the moment-to-force ratio becomes
+\begin{equation}
+  \frac{\ell+\mu_r\,\mathbf n^T\mathbf p}{\sqrt{1+\mu_r^2}},
+  \label{eq:fixedrod}
+\end{equation}
+where $\mathbf n^T\mathbf p$ is the distance from the grasp to the tangent line at the contact. It is positive for a contact on the convex hull of $P$ and can be zero or negative inside a concavity; either way, the fixed rod's wrench depends on $\mu_r$.
+
+With a free rod, the direction and line of the turn's contact wrench are therefore fixed by geometry, and only its magnitude remains unknown. A fixed rod makes them depend on an unknown coefficient. Bearing friction, neglected here, adds a tangential force equal to the bearing torque divided by $R$. During a shift, by contrast, no contact slides and the bearing plays no role.
+
+\subsection{Grasp slip during the turn}
+\label{sec:slip}
+
+The orbit assumes that the grip holds the grasp point while the object pivots. A real pad slides as a patch, and its response to a combined force and moment is described by a limit surface \cite{goyal1991planar}. We use the ellipsoidal approximation \cite{howe1996practical,xydas1999modeling}: the friction forces and moments that a sliding pad can transmit lie on an ellipsoid whose largest moment is a length $\rho$ times its largest force. The length $\rho$ is set by the pad's footprint and pressure distribution; for uniform pressure on a disk, it is two-thirds of the disk's radius. The friction coefficient and grip force only scale the ellipsoid.
+
+\begin{proposition}[Turn slip]
+\label{prop:slip}
+During a turn about a free rod with lever arm $\ell$, under the ellipsoidal limit surface and to first order in $\rho^2/\ell^2$, the grasp point drifts on the object toward the contact, along $\mathbf n$, by $\rho^2/\ell$ per radian of in-grasp rotation, and the object under-rotates: its in-grasp rotation at the end of the orbit is $\Delta(1-\rho^2/\ell^2)$. Neither the friction coefficient nor the grip force appears.
+\end{proposition}
+\begin{proof}
+In the plane, only the pad and the rod act on the object, so quasi-statically the pad carries the rod's wrench: about the grasp, a force along $-\mathbf n$ and a counterclockwise moment equal to $\ell$ times that force (Section~\ref{sec:freerod}). The pad slides because the object pivots, so this load lies on the limit surface, and the sliding motion is normal to it \cite{goyal1991planar}. On the ellipsoid, the normal at a load whose force-to-moment ratio is $1/\ell$ makes the grasp slip along $-\mathbf n$ by $\rho^2/\ell$ per radian of relative rotation, whatever the force magnitude and the friction coefficient. After a rotation $\theta$, the grasp point has therefore drifted on the object by $\rho^2\theta/\ell$ along $\mathbf n$, which moves the rod centre, in the object frame, by the same amount along $\mathbf n$. The contact condition changes at the rate $\ell$ per radian (Section~\ref{sec:orbit}), so the rotation lags by the drift divided by $\ell$; at the end of the orbit, the lag is $\Delta\rho^2/\ell^2$. Integrating the same model numerically for the configuration of Section~\ref{sec:exp_tworod}, the first-order estimate slightly overstates the under-rotation: by $0.2^{\circ}$ for $\rho/\ell=0.19$ and by $1.6^{\circ}$ for $\rho/\ell=0.31$.
+\end{proof}
+
+
+Drift along the push line leaves the lever arm unchanged, which keeps the estimate simple. The ellipsoid is an approximation, but the $1/\ell$ scaling of the slip rate holds for any smooth limit surface near a pure-moment load, so ranking contacts by $\ell$ does not depend on it. The same model is consistent with the shift: there the rods leave no moment about the grasp, the pad's load is a pure force, and an isotropic pad slides in pure translation, as Proposition~\ref{prop:stiffness} assumes. With a fixed rod, the load would also depend on $\mu_r$ through \eqref{eq:fixedrod}, and the slip would acquire a tangential component that changes the lever arm; no friction-free prediction would remain.
