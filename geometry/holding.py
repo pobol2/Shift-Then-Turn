@@ -5,10 +5,10 @@ Same pentagon and shift as fig:tworod.
 
 import numpy as np
 
-from .construction import design, poly_info
+from simulation.core import ROD_RADIUS_MM as R
 
-P = np.array([[-34, -17], [30, -21], [46, 2], [18, 22], [-40, 13]], float)
-R = 5
+from .construction import design, poly_info
+from .examples import DELTA, LAMBDA, D, P
 
 
 def figure():
@@ -21,7 +21,7 @@ def figure():
         return f'\\draw[{style}] ' + ' -- '.join(f(p) for p in Pts) + ' -- cycle;'
 
     def rod(q):
-        return f'  \\draw[feature] {f(q)} circle[radius={R}]; \\fill {f(q)} circle(.6pt);'
+        return f'  \\draw[feature] {f(q)} circle[radius={R:g}]; \\fill {f(q)} circle(.6pt);'
 
     S = 0.042
     e = 3
@@ -52,7 +52,7 @@ def figure():
     B.append(f'  \\draw[motion,line width=.9pt] {f(5 * n)} -- {f(12 * n)};')
     ptsB = list(P) + [foot + 16 * t + 19 * n, foot - 16 * t + 19 * n, -18 * n]
     # (c) trailing vertex, Fig. 1 shift
-    o = design(P, R, np.radians(80), np.array([6, 18.0]), 34)
+    o = design(P, R, DELTA, D, LAMBDA)
     x, dh, pa, pb, qa, qb, na, nb = o['x'], o['dh'], o['pa'], o['pb'], o['qa'], o['qb'], o['na'], o['nb']
     a1 = np.degrees(np.arctan2(-na[1], -na[0]))
     a2 = np.degrees(np.arctan2(-nb[1], -nb[0]))

@@ -1,28 +1,39 @@
-"""Shared E1--E7 trial settings, first-touch commands and trial execution.
+"""Shared E1--E7 trial settings, sensors and gripper commands.
 
 Distances are millimetres in trial metadata and SI in the physics engine.
 Plant perturbations are removed before constructing the controller.
 """
 
 import math
-from dataclasses import dataclass, replace
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
 
+from geometry.construction import Q as rotation
+
 HERE = Path(__file__).resolve().parent
-NOMINAL = np.array([[-36.0, 20.0], [-45.0, 9.0]])
+_MODEL = ET.parse(HERE / 'model.xml').getroot()
+ROD_RADIUS_M = float(_MODEL.find(".//default[@class='rod']/geom").get('size').split()[0])
+ROD_RADIUS_MM = 1000 * ROD_RADIUS_M
+PLATE_HALF_M = np.fromstring(_MODEL.find(".//geom[@name='object_geom']").get('size'), sep=' ')[:2]
+NOMINAL = np.array(
+    [
+        np.fromstring(_MODEL.find(f".//body[@name='rod_{label}_body']").get('pos'), sep=' ')[:2] * 1000
+        for label in ('lower', 'upper')
+    ]
+)
+RHO_MM = 1000 * float(_MODEL.find(".//default[@class='pad']/geom").get('friction').split()[1])
+PINCH_N = 5.0  # Each pad; total sliding capacity 10 N with mu=1.
+CONTACT_FORCE_N = 0.02
+CONTACT_GAP_M = 1e-7
 D0 = np.array([20.0, -5.0])
 WAPP = np.array([-1.0, 1.0]) / np.sqrt(2)
 
 
 def wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
-
-
-def rotation(angle):
-    c, s = np.cos(angle), np.sin(angle)
-    return np.array([[c, -s], [s, c]])
 
 
 W = rotation(np.pi / 2) @ (D0 / np.linalg.norm(D0))
@@ -56,15 +67,15 @@ class PaperSensors:
 class Trial:
     name: str
     experiment: str
-    rods: list = None
+    rods: list = field(default_factory=lambda: NOMINAL.tolist())
     active_rods: int = 2
     free: bool = True
     rod_mu: float = 0.0
-    rho_mm: float = 2.0
+    rho_mm: float = RHO_MM
     lever_mm: float = 16.0
-    object_error: list = None
-    grasp_error: list = None
-    rod_error: list = None
+    object_error: list = field(default_factory=lambda: [0.0, 0.0])
+    grasp_error: list = field(default_factory=lambda: [0.0, 0.0])
+    rod_error: list = field(default_factory=lambda: [[0.0, 0.0], [0.0, 0.0]])
     initial_angle_deg: float = 0.0
     strategy: str = 'A'
     seed: int = 7
@@ -83,14 +94,65 @@ class Trial:
     final_hold_s: float = 0.0
 
     def __post_init__(self):
-        if self.rods is None:
-            self.rods = NOMINAL.tolist()
-        if self.object_error is None:
-            self.object_error = [0.0, 0.0]
-        if self.grasp_error is None:
-            self.grasp_error = [0.0, 0.0]
-        if self.rod_error is None:
-            self.rod_error = [[0.0, 0.0], [0.0, 0.0]]
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError('name must be a nonempty string')
+        if self.experiment not in ('E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'creep'):
+            raise ValueError(f'unknown experiment: {self.experiment!r}')
+        if self.strategy not in ('A', 'B', 'C'):
+            raise ValueError(f'unknown strategy: {self.strategy!r}')
+        if (
+            isinstance(self.active_rods, bool)
+            or not isinstance(self.active_rods, (int, np.integer))
+            or self.active_rods not in (1, 2)
+        ):
+            raise ValueError('active_rods must be 1 or 2')
+        if not isinstance(self.free, bool):
+            raise ValueError('free must be a boolean')
+        if isinstance(self.seed, bool) or not isinstance(self.seed, (int, np.integer)) or self.seed < 0:
+            raise ValueError('seed must be a nonnegative integer')
+        for key, shape in (('rods', (2, 2)), ('object_error', (2,)), ('grasp_error', (2,)), ('rod_error', (2, 2))):
+            try:
+                value = np.asarray(getattr(self, key), dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f'{key} must contain finite numbers with shape {shape}') from exc
+            if value.shape != shape or not np.all(np.isfinite(value)):
+                raise ValueError(f'{key} must contain finite numbers with shape {shape}')
+            setattr(self, key, value.tolist())
+        positive = ('timestep', 'speed_scale', 'lever_mm', 'touch_threshold_N', 'impratio')
+        nonnegative = (
+            'rod_mu',
+            'rho_mm',
+            'noise_deg',
+            'approach_clearance_mm',
+            'acquisition_clearance_mm',
+            'sensor_filter_s',
+            'initial_hold_s',
+            'final_hold_s',
+        )
+        for key in (*positive, *nonnegative, 'initial_angle_deg', 'e_mm'):
+            value = getattr(self, key)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float, np.integer, np.floating))
+                or not np.isfinite(value)
+            ):
+                raise ValueError(f'{key} must be finite')
+            if key in positive and value <= 0:
+                raise ValueError(f'{key} must be positive')
+            if key in nonnegative and value < 0:
+                raise ValueError(f'{key} must be nonnegative')
+        if self.timestep > 0.01:
+            raise ValueError('timestep must be at most 0.01 s for 100 Hz logging')
+        if self.lambda_mm is not None:
+            if (
+                isinstance(self.lambda_mm, bool)
+                or not isinstance(self.lambda_mm, (int, float, np.integer, np.floating))
+                or not np.isfinite(self.lambda_mm)
+                or self.lambda_mm <= 0
+            ):
+                raise ValueError('lambda_mm must be finite and positive')
+        if self.experiment == 'E2' and self.lambda_mm is None:
+            raise ValueError('E2 requires lambda_mm')
 
 
 class Commands:
@@ -108,6 +170,8 @@ class Commands:
 
     def line(self, phase, end):
         end = np.array(end)
+        if self.t.experiment == 'E2':
+            end = end - self.t.e_mm * W / 1000
         duration = max(0.2, np.linalg.norm(end - self.encoder) / (0.005 * self.t.speed_scale))
         yield from self.move(phase, end, duration)
 
@@ -121,7 +185,7 @@ class Commands:
                 measured = rotation(noise) @ normal
                 theta = float(wrap(math.atan2(measured[1], measured[0]) - np.pi / 2))
                 center = np.array(self.t.rods[0]) / 1000
-                point = center - 0.005 * measured
+                point = center - ROD_RADIUS_M * measured
                 lever = -((point - self.encoder)[0] * measured[1] - (point - self.encoder)[1] * measured[0])
                 if self.t.strategy == 'C' and (lever < 0.005 or abs(theta) > math.radians(15)):
                     self.status = 'acquisition_abort'
@@ -166,130 +230,18 @@ class Commands:
         yield from self.move('settle', self.encoder, t.final_hold_s)
         self.status = 'complete'
 
+    def move(self, phase, end, duration):
+        start = self.encoder.copy()
+        end = np.array(end)
+        n = max(1, round(duration / self.t.timestep))
+        if duration == 0:
+            return
+        for k in range(1, n + 1):
+            yield self.emit(phase, start + (end - start) * (k / n))
 
-PAPER_FIELDS = [
-    'time_s',
-    'phase',
-    'gripper_x_mm',
-    'gripper_y_mm',
-    'gripper_theta_deg',
-    'object_x_mm',
-    'object_y_mm',
-    'object_theta_deg',
-    'relative_x_mm',
-    'relative_y_mm',
-    'relative_theta_deg',
-    'grasp_body_x_mm',
-    'grasp_body_y_mm',
-    'rod_a_normal_N',
-    'rod_b_normal_N',
-    'rod_a_tangent_N',
-    'rod_b_tangent_N',
-    'pad_overlap',
-    'grasp_lost',
-    'pinch_preload_N',
-    'grasp_fx_N',
-    'grasp_fy_N',
-    'grasp_torque_about_pad_Nm',
-]
-
-
-def row(exp, phase):
-    force, tangent, _, _, _ = exp.contacts(True)
-    relative = exp.data.qpos[:2] - exp.gripper
-    body = rotation(exp.data.qpos[2]).T @ (-relative)
-    applied = exp.data.qfrc_applied[:3]
-    lever = exp.gripper - exp.data.qpos[:2]
-    torque = applied[2] - (lever[0] * applied[1] - lever[1] * applied[0])
-    return [
-        float(exp.data.time),
-        phase,
-        *exp.gripper * 1000,
-        0.0,
-        *exp.data.qpos[:2] * 1000,
-        math.degrees(exp.data.qpos[2]),
-        *relative * 1000,
-        math.degrees(exp.data.qpos[2]),
-        *body * 1000,
-        *force,
-        *tangent,
-        exp.overlap,
-        int(exp.lost),
-        20.0,
-        *applied[:2],
-        torque,
-    ]
-
-
-def run_trial(t, *, plant_class, row_function, commands_class):
-    """Run one trial; return its final measurements and its 100 Hz log rows."""
-    exp = plant_class(t)
-    sensors = PaperSensors(exp, t)
-    nominal = replace(t, object_error=[0, 0], grasp_error=[0, 0], rod_error=[[0, 0], [0, 0]], initial_angle_deg=0)
-    controller = commands_class(nominal, exp.gripper, sensors)
-    rows = [row_function(exp, 'initial')]
-    phases = []
-    turn_start = None
-    shift_end = None
-    turn_body = None
-    creep_start = None
-    settle_start = None
-    separation = None
-    force_unload = None
-    separation_state = None
-    ever = False
-    for k, (phase, command) in enumerate(controller.run(), 1):
-        if phase == 'turn' and turn_start is None:
-            turn_start = float(exp.data.time)
-            turn_body = rotation(exp.data.qpos[2]).T @ (exp.gripper - exp.data.qpos[:2]) * 1000
-            separation_rod_index = 0 if t.experiment == 'E6' else 1
-            other_loaded = bool(exp.contacts()[separation_rod_index] > 0.02)
-            separation_state = 'awaiting_separation' if other_loaded else 'initially_unloaded'
-        if phase == 'settle' and settle_start is None:
-            settle_start = exp.data.qpos[:3].copy()
-        if phase == 'creep_hold' and creep_start is None:
-            creep_start = exp.data.qpos[:3].copy()
-        exp.step(np.array(command))
-        sensors.update()
-        if not np.all(np.isfinite(exp.data.qpos)) or np.any(exp.data.warning.number):
-            raise FloatingPointError(f'{t.name}: MuJoCo nonfinite state / warning')
-        force = exp.contacts()
-        ever |= bool(np.any(force > 0.02))
-        if phase == 'shift':
-            shift_end = exp.data.qpos[:3].copy()
-        if phase == 'turn' and separation_state != 'initially_unloaded':
-            if force_unload is None and force[separation_rod_index] < 1e-9:
-                force_unload = float(exp.data.time) - turn_start
-            if separation is None and exp.rod_gaps()[separation_rod_index] > 1e-7:
-                separation = float(exp.data.time) - turn_start
-                separation_state = 'separated'
-        if phase not in phases:
-            phases.append(phase)
-        if k % round(0.01 / t.timestep) == 0:
-            rows.append(row_function(exp, phase))
-    rows.append(row_function(exp, phases[-1] if phases else 'initial'))
-    final = rows[-1]
-    relative = np.array(final[8:10])
-    theta = final[10]
-    body = np.array(final[11:13])
-    delta = 90 if t.experiment in ('E1', 'E3', 'E4', 'E6', 'E7') else 0
-    d = D0 if t.experiment in ('E1', 'E2', 'E3', 'E4', 'E7', 'creep') else np.array([0.0, -10.0])
-    position_error = relative - rotation(math.radians(delta)) @ d
-    result = dict(
-        status=controller.status,
-        signed_angle_error_deg=float((theta - delta + 180) % 360 - 180),
-        position_error_mm=float(np.linalg.norm(position_error)),
-        world_shift_angle_deg=None if shift_end is None else math.degrees(shift_end[2]),
-        grasp_position_error_against_target_mm=(body - (-d)).tolist(),
-        turn_grasp_drift_body_mm=None if turn_body is None else (body - turn_body).tolist(),
-        nonturning_rod_force_zero_after_turn_start_s=force_unload,
-        separation_after_turn_start_s=separation,
-        grasp_retained=not exp.lost,
-        ever_contact=ever,
-        abort=controller.status == 'acquisition_abort',
-        creep_drift_pose=None
-        if creep_start is None
-        else [*((exp.data.qpos[:2] - creep_start[:2]) * 1000), math.degrees(exp.data.qpos[2] - creep_start[2])],
-        E2_hold_angle_change_deg=None if settle_start is None else theta - math.degrees(settle_start[2]),
-    )
-    return result, rows
+    def orbit(self, rod=0, angle=90):
+        center = np.array(self.t.rods[rod]) / 1000
+        start = self.encoder.copy()
+        n = round(abs(angle) / (10 * self.t.speed_scale) / self.t.timestep)
+        for k in range(1, n + 1):
+            yield self.emit('turn', center + rotation(np.deg2rad(angle) * k / n) @ (start - center))

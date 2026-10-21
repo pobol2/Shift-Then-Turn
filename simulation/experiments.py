@@ -1,5 +1,6 @@
 """MuJoCo plant, E1--E7 cases and parallel runner for the paper's simulations."""
 
+import math
 import xml.etree.ElementTree as ET
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, replace
@@ -7,128 +8,65 @@ from dataclasses import asdict, replace
 import mujoco
 import numpy as np
 
-from . import core as pe
-
-PINCH_N = 5.0  # Each pad; total sliding capacity 10 N with mu=1.
-PAD_RADIUS_M = 0.001
-CONTACT_FORCE_N = 0.02
-CONTACT_GAP_M = 1e-7
-FIELDS = pe.PAPER_FIELDS + [
-    'pad_top_normal_N',
-    'pad_bottom_normal_N',
-    'pad_top_contacts',
-    'pad_bottom_contacts',
-    'rod_a_contacts',
-    'rod_b_contacts',
-    'rod_a_gap_mm',
-    'rod_b_gap_mm',
-    'pad_top_supported',
-    'pad_bottom_supported',
-    'rod_a_supported',
-    'rod_b_supported',
-    'rod_a_spin_rad',
-    'rod_b_spin_rad',
-]
+from .core import (
+    CONTACT_FORCE_N,
+    CONTACT_GAP_M,
+    D0,
+    HERE,
+    PINCH_N,
+    PLATE_HALF_M,
+    ROD_RADIUS_M,
+    WAPP,
+    Commands,
+    PaperSensors,
+    Trial,
+    W,
+    rotation,
+)
 
 
-class NativePlant:
+class Plant:
     def update_overlap(self):
         # The grasp wrench is supplied exclusively by native contacts.
-        local = pe.rotation(self.data.qpos[2]).T @ (self.gripper - self.data.qpos[:2])
+        local = rotation(self.data.qpos[2]).T @ (self.gripper - self.data.qpos[:2])
         self.overlap = float(np.all(np.abs(local) < self.half))
         # Retention is updated from both pad forces after initial pinch settling.
 
     def __init__(self, t):
         self.trial = t
-        self.half = np.array([0.04, 0.015])
+        self.half = PLATE_HALF_M.copy()
         self.overlap = 1.0
         self.lost = False
         # Unknown geometry enters only the plant's initial state.
         if t.experiment in ('E3', 'E4', 'E7'):
-            start = np.array([-20.0, 5.0]) - (
-                np.array([0.0, t.acquisition_clearance_mm]) if t.experiment == 'E7' else 0
-            )
+            start = -D0 - (np.array([0.0, t.acquisition_clearance_mm]) if t.experiment == 'E7' else 0)
             theta = np.deg2rad(t.initial_angle_deg)
-            true_grasp = np.array([-20.0, 5.0]) + t.grasp_error
-            center = start - pe.rotation(theta) @ true_grasp
+            true_grasp = -D0 + t.grasp_error
+            center = start - rotation(theta) @ true_grasp
         else:
-            start = -t.approach_clearance_mm * pe.WAPP if t.experiment in ('E1', 'E2') else np.zeros(2)
+            start = -t.approach_clearance_mm * WAPP if t.experiment in ('E1', 'E2') else np.zeros(2)
             theta = 0.0
             center = start + np.array(t.object_error)
         # E2 perturbs the grasp, preserving nominal rod/plate clearance.
-        self.gripper = (start - t.e_mm * pe.W if t.experiment == 'E2' else start) / 1000
+        self.gripper = (start - t.e_mm * W if t.experiment == 'E2' else start) / 1000
         initial = np.array([*np.array(center) / 1000, theta])
-        root = ET.parse(pe.HERE / 'model.xml').getroot()
-        root.find('option').set('cone', 'elliptic')
+        root = ET.parse(HERE / 'model.xml').getroot()
         root.find('option').set('impratio', str(t.impratio))
         root.find('option').set('timestep', str(t.timestep))
-        root.find('option').set('iterations', '100')
-        root.find('option').set('integrator', 'implicitfast')
-        obj = root.find(".//geom[@name='object_geom']")
-        obj.set('size', '0.04 0.015 0.0025')
-        obj.set('contype', '1')
-        obj.set('conaffinity', '6')
         centers = np.array(t.rods) + np.array(t.rod_error)
         for i, label in enumerate(('lower', 'upper')):
             body = root.find(f".//body[@name='rod_{label}_body']")
             body.set('pos', f'{centers[i, 0] / 1000} {centers[i, 1] / 1000} 0.015')
             geom = root.find(f".//geom[@name='rod_{label}']")
-            # Analytic capsule/box collision avoids convex-cylinder tangency artifacts.
-            # Caps lie outside the plate z range; the contact region is cylindrical.
-            geom.set('type', 'capsule')
-            geom.set('size', '0.005 0.025')
-            geom.set('condim', '3')
-            rotor = root.find(f".//body[@name='rod_{label}_rotor']")
-            ET.SubElement(
-                rotor,
-                'inertial',
-                pos='0 0 0',
-                mass='.02',
-                diaginertia='4.291666666666667e-6 4.291666666666667e-6 2.5e-7',
-            )
             geom.set('friction', f'{t.rod_mu} 0 0')
-            geom.set('priority', '1')
-            geom.set('contype', '2')
-            geom.set('conaffinity', '1')
             if not t.free:
                 rotor = root.find(f".//body[@name='rod_{label}_rotor']")
                 rotor.remove(rotor.find('joint'))
             if i >= t.active_rods:
                 geom.set('contype', '0')
                 geom.set('conaffinity', '0')
-        grip = root.find(".//body[@name='gripper']")
-        grip.attrib.pop('mocap')
-        grip.set('pos', '0 0 0.015')
-        for axis, vector in [('x', '1 0 0'), ('y', '0 1 0')]:
-            ET.SubElement(grip, 'joint', name='gripper_' + axis, type='slide', axis=vector, armature='1000000')
-        actuator = ET.SubElement(root, 'actuator')
-        for label, sign in [('top', 1), ('bottom', -1)]:
-            b = ET.SubElement(grip, 'body', name='pad_' + label + '_body', pos=f'0 0 {sign * 0.0035}')
-            ET.SubElement(
-                b,
-                'joint',
-                name='pinch_' + label,
-                type='slide',
-                axis='0 0 1',
-                limited='true',
-                range='-.001 .001',
-                damping='.01',
-            )
-            ET.SubElement(
-                b,
-                'geom',
-                name='pad_' + label,
-                type='sphere',
-                size=str(PAD_RADIUS_M),
-                mass='.01',
-                condim='4',
-                friction=f'1 {t.rho_mm / 1000} 0',
-                priority='2',
-                contype='4',
-                conaffinity='1',
-                rgba='.9 .4 .1 1',
-            )
-            ET.SubElement(actuator, 'motor', name='pinch_' + label, joint='pinch_' + label, gear='1')
+        for label in ('top', 'bottom'):
+            root.find(f".//geom[@name='pad_{label}']").set('friction', f'1 {t.rho_mm / 1000} 0')
         self.model = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding='unicode'))
         self.data = mujoco.MjData(self.model)
         self.data.qpos[:3] = initial
@@ -185,9 +123,9 @@ class NativePlant:
 
     def rod_gaps(self):
         # Independent planar circle/rectangle signed distance, including corners.
-        local = (self.data.geom_xpos[self.rod_ids, :2] - self.data.qpos[:2]) @ pe.rotation(self.data.qpos[2])
+        local = (self.data.geom_xpos[self.rod_ids, :2] - self.data.qpos[:2]) @ rotation(self.data.qpos[2])
         q = np.abs(local) - self.half
-        return np.linalg.norm(np.maximum(q, 0), axis=1) + np.minimum(np.max(q, axis=1), 0) - 0.005
+        return np.linalg.norm(np.maximum(q, 0), axis=1) + np.minimum(np.max(q, axis=1), 0) - ROD_RADIUS_M
 
     def rod_spins(self):
         return [
@@ -209,9 +147,10 @@ class NativePlant:
             self.lost |= not bool(self.overlap and np.all(normal > CONTACT_FORCE_N) and np.all(count[:2] > 0))
 
 
-def native_row(exp, phase):
-    values = pe.row(exp, phase)
-    values[19] = 2 * PINCH_N
+def row(exp, phase):
+    relative = exp.data.qpos[:2] - exp.gripper
+    body = rotation(exp.data.qpos[2]).T @ (-relative)
+    rods, tangent, _, _, _ = exp.contacts(True)
     normal, count = exp.physical_contacts()
     force = np.zeros(3)
     torque = np.zeros(3)
@@ -225,46 +164,125 @@ def native_row(exp, phase):
         world = sign * c.frame.reshape(3, 3).T @ f[:3]
         force += world
         torque += sign * c.frame.reshape(3, 3).T @ f[3:] + np.cross(c.pos - np.array([*exp.gripper, 0.015]), world)
-    values[20:23] = [*force[:2], torque[2]]
-    return (
-        values
-        + normal.tolist()
-        + count.tolist()
-        + (exp.rod_gaps() * 1000).tolist()
-        + (normal > CONTACT_FORCE_N).astype(int).tolist()
-        + (exp.contacts() > CONTACT_FORCE_N).astype(int).tolist()
-        + exp.rod_spins()
+    gaps = exp.rod_gaps() * 1000
+    spins = exp.rod_spins()
+    return dict(
+        time_s=float(exp.data.time),
+        phase=phase,
+        gripper_x_mm=exp.gripper[0] * 1000,
+        gripper_y_mm=exp.gripper[1] * 1000,
+        gripper_theta_deg=0.0,
+        object_x_mm=exp.data.qpos[0] * 1000,
+        object_y_mm=exp.data.qpos[1] * 1000,
+        object_theta_deg=math.degrees(exp.data.qpos[2]),
+        relative_x_mm=relative[0] * 1000,
+        relative_y_mm=relative[1] * 1000,
+        relative_theta_deg=math.degrees(exp.data.qpos[2]),
+        grasp_body_x_mm=body[0] * 1000,
+        grasp_body_y_mm=body[1] * 1000,
+        rod_a_normal_N=rods[0],
+        rod_b_normal_N=rods[1],
+        rod_a_tangent_N=tangent[0],
+        rod_b_tangent_N=tangent[1],
+        pad_overlap=exp.overlap,
+        grasp_lost=int(exp.lost),
+        pinch_preload_N=2 * PINCH_N,
+        grasp_fx_N=force[0],
+        grasp_fy_N=force[1],
+        grasp_torque_about_pad_Nm=torque[2],
+        pad_top_normal_N=normal[0],
+        pad_bottom_normal_N=normal[1],
+        pad_top_contacts=count[0],
+        pad_bottom_contacts=count[1],
+        rod_a_contacts=count[2],
+        rod_b_contacts=count[3],
+        rod_a_gap_mm=gaps[0],
+        rod_b_gap_mm=gaps[1],
+        pad_top_supported=int(normal[0] > CONTACT_FORCE_N),
+        pad_bottom_supported=int(normal[1] > CONTACT_FORCE_N),
+        rod_a_supported=int(rods[0] > CONTACT_FORCE_N),
+        rod_b_supported=int(rods[1] > CONTACT_FORCE_N),
+        rod_a_spin_rad=spins[0],
+        rod_b_spin_rad=spins[1],
     )
 
 
-class NativeCommands(pe.Commands):
-    def line(self, phase, end):
-        # Preserve E2's grasp offset throughout the nominal translation path.
-        if self.t.experiment == 'E2':
-            end = np.array(end) - self.t.e_mm * pe.W / 1000
-        yield from super().line(phase, end)
-
-    def move(self, phase, end, duration):
-        # Constant speed along the specified line (no bowed paths).
-        start = self.encoder.copy()
-        end = np.array(end)
-        n = max(1, round(duration / self.t.timestep))
-        if duration == 0:
-            return
-        for k in range(1, n + 1):
-            yield self.emit(phase, start + (end - start) * (k / n))
-
-    def orbit(self, rod=0, angle=90):
-        center = np.array(self.t.rods[rod]) / 1000
-        start = self.encoder.copy()
-        n = round(abs(angle) / (10 * self.t.speed_scale) / self.t.timestep)
-        for k in range(1, n + 1):
-            yield self.emit('turn', center + pe.rotation(np.deg2rad(angle) * k / n) @ (start - center))
+def run_trial(t):
+    """Run one trial; return its final measurements and its 100 Hz log rows."""
+    exp = Plant(t)
+    sensors = PaperSensors(exp, t)
+    nominal = replace(t, object_error=[0, 0], grasp_error=[0, 0], rod_error=[[0, 0], [0, 0]], initial_angle_deg=0)
+    controller = Commands(nominal, exp.gripper, sensors)
+    rows = [row(exp, 'initial')]
+    phases = []
+    turn_start = None
+    shift_end = None
+    turn_body = None
+    creep_start = None
+    settle_start = None
+    separation = None
+    force_unload = None
+    separation_state = None
+    ever = False
+    for k, (phase, command) in enumerate(controller.run(), 1):
+        if phase == 'turn' and turn_start is None:
+            turn_start = float(exp.data.time)
+            turn_body = rotation(exp.data.qpos[2]).T @ (exp.gripper - exp.data.qpos[:2]) * 1000
+            separation_rod_index = 0 if t.experiment == 'E6' else 1
+            other_loaded = bool(exp.contacts()[separation_rod_index] > CONTACT_FORCE_N)
+            separation_state = 'awaiting_separation' if other_loaded else 'initially_unloaded'
+        if phase == 'settle' and settle_start is None:
+            settle_start = exp.data.qpos[:3].copy()
+        if phase == 'creep_hold' and creep_start is None:
+            creep_start = exp.data.qpos[:3].copy()
+        exp.step(np.array(command))
+        sensors.update()
+        if not np.all(np.isfinite(exp.data.qpos)) or np.any(exp.data.warning.number):
+            raise FloatingPointError(f'{t.name}: MuJoCo nonfinite state / warning')
+        force = exp.contacts()
+        ever |= bool(np.any(force > CONTACT_FORCE_N))
+        if phase == 'shift':
+            shift_end = exp.data.qpos[:3].copy()
+        if phase == 'turn' and separation_state != 'initially_unloaded':
+            if force_unload is None and force[separation_rod_index] < 1e-9:
+                force_unload = float(exp.data.time) - turn_start
+            if separation is None and exp.rod_gaps()[separation_rod_index] > CONTACT_GAP_M:
+                separation = float(exp.data.time) - turn_start
+                separation_state = 'separated'
+        if phase not in phases:
+            phases.append(phase)
+        if k % round(0.01 / t.timestep) == 0:
+            rows.append(row(exp, phase))
+    rows.append(row(exp, phases[-1] if phases else 'initial'))
+    final = rows[-1]
+    relative = np.array([final['relative_x_mm'], final['relative_y_mm']])
+    theta = final['relative_theta_deg']
+    body = np.array([final['grasp_body_x_mm'], final['grasp_body_y_mm']])
+    delta = 90 if t.experiment in ('E1', 'E3', 'E4', 'E6', 'E7') else 0
+    d = D0 if t.experiment in ('E1', 'E2', 'E3', 'E4', 'E7', 'creep') else np.array([0.0, -10.0])
+    position_error = relative - rotation(math.radians(delta)) @ d
+    result = dict(
+        status=controller.status,
+        signed_angle_error_deg=float((theta - delta + 180) % 360 - 180),
+        position_error_mm=float(np.linalg.norm(position_error)),
+        world_shift_angle_deg=None if shift_end is None else math.degrees(shift_end[2]),
+        grasp_position_error_against_target_mm=(body - (-d)).tolist(),
+        turn_grasp_drift_body_mm=None if turn_body is None else (body - turn_body).tolist(),
+        nonturning_rod_force_zero_after_turn_start_s=force_unload,
+        separation_after_turn_start_s=separation,
+        grasp_retained=not exp.lost,
+        ever_contact=ever,
+        abort=controller.status == 'acquisition_abort',
+        creep_drift_pose=None
+        if creep_start is None
+        else [*((exp.data.qpos[:2] - creep_start[:2]) * 1000), math.degrees(exp.data.qpos[2] - creep_start[2])],
+        E2_hold_angle_change_deg=None if settle_start is None else theta - math.degrees(settle_start[2]),
+    )
+    return result, rows
 
 
 def trials():
     """The E1--E7 and creep cases of the paper; E7 strategies share paired seeds."""
-    Trial = pe.Trial
     cases = []
     rng = np.random.default_rng(7)
     for i in range(10):
@@ -272,7 +290,7 @@ def trials():
     cases.append(replace(cases[0], name='E1_trial00_half_speed', speed_scale=0.5, parent='E1_trial00'))
     cases.append(Trial('creep_9s', 'creep'))
     for lam in [float(np.linalg.norm([-36, 9])), 30.0]:
-        x = -lam * pe.D0 / np.linalg.norm(pe.D0)
+        x = -lam * D0 / np.linalg.norm(D0)
         for e in [-1, -0.5, 0, 0.5, 1]:
             cases.append(
                 Trial(
@@ -348,43 +366,49 @@ MEASURED = {
 
 def run(tdict):
     """One trial, reduced to the quantities the paper reports."""
-    t = pe.Trial(**tdict)
-    m, rows = pe.run_trial(t, plant_class=NativePlant, row_function=native_row, commands_class=NativeCommands)
+    t = Trial(**tdict)
+    m, rows = run_trial(t)
     record = dict(
         name=t.name,
         experiment=t.experiment,
         parent=t.parent,
         timestep=t.timestep,
         speed_scale=t.speed_scale,
-        **{k: tdict[k] for k in INPUTS.get(t.experiment, [])},
+        **{k: getattr(t, k) for k in INPUTS.get(t.experiment, [])},
         status=m['status'],
         signed_angle_error_deg=m['signed_angle_error_deg'],
         **{k: m[k] for k in MEASURED[t.experiment]},
     )
-    column = {f: i for i, f in enumerate(FIELDS)}
     if t.experiment == 'E6':
         # Load on the other rod after the retreat, to show it is not touched again.
         record['rod_a_peak_after_retreat_N'] = max(
-            r[column['rod_a_normal_N']] for r in rows if r[column['phase']] in ('carry', 'reengage', 'turn')
+            r['rod_a_normal_N'] for r in rows if r['phase'] in ('carry', 'reengage', 'turn')
         )
     if t.experiment == 'E2' and t.e_mm == -1 and not t.parent:
         # Tilt along the shift against grasp travel, for the shift figure.
         def xy(r):
-            return np.array([r[column['gripper_x_mm']], r[column['gripper_y_mm']]])
+            return np.array([r['gripper_x_mm'], r['gripper_y_mm']])
 
-        start = xy([r for r in rows if r[column['phase']] == 'approach'][-1])
-        shift = [r for r in rows if r[column['phase']] == 'shift']
-        record['shift_travel_mm'] = [float((xy(r) - start) @ (-pe.D0 / np.linalg.norm(pe.D0))) for r in shift]
-        record['shift_tilt_deg'] = [r[column['object_theta_deg']] for r in shift]
+        start = xy([r for r in rows if r['phase'] == 'approach'][-1])
+        shift = [r for r in rows if r['phase'] == 'shift']
+        record['shift_travel_mm'] = [float((xy(r) - start) @ (-D0 / np.linalg.norm(D0))) for r in shift]
+        record['shift_tilt_deg'] = [r['object_theta_deg'] for r in shift]
     return record
 
 
 def execute(cases, workers):
+    if isinstance(workers, bool) or not isinstance(workers, int) or workers < 1:
+        raise ValueError('workers must be a positive integer')
+    if len({t.name for t in cases}) != len(cases):
+        raise ValueError('trial names must be unique')
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        jobs = [pool.submit(run, asdict(t)) for t in cases]
+        jobs = {pool.submit(run, asdict(t)): t.name for t in cases}
         records = {}
         for n, f in enumerate(as_completed(jobs), 1):
-            r = f.result()
+            try:
+                r = f.result()
+            except Exception as exc:
+                raise RuntimeError(f'{jobs[f]} failed: {exc}') from exc
             records[r['name']] = r
             if n % 10 == 0 or n == len(jobs):
                 print(f'{n}/{len(jobs)} {r["name"]} {r["status"]}', flush=True)

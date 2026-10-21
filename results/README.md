@@ -3,7 +3,7 @@
 [`simulation.json`](simulation.json) holds the 367 MuJoCo runs behind the
 [paper](../paper/main.pdf)'s simulation tables, figures and quoted values. It is
 written by `python -m simulation run` (see the [commands](../README.md#commands)),
-which overwrites it; `tables` and `figures` read it and write into `paper/`.
+which requires `--overwrite` to replace it; `tables` and `figures` read it and write into `paper/`.
 
 ## Format
 

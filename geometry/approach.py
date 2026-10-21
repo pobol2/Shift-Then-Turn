@@ -7,7 +7,7 @@ import numpy as np
 from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon
 
-R = 5
+from simulation.core import ROD_RADIUS_MM as R
 
 
 def figure():
@@ -53,15 +53,15 @@ def figure():
     A = [path(G, 'cobs'), path(P, 'object')]
     for q in ((-45, 0), (45, 4), (25, 20)):
         assert abs(P.distance(Point(q)) - R) < 1e-9, q
-        A.append(f'\\draw[rodghost] {f(q)} circle[radius=5];')
-    A.append(f'\\draw[rodghost] {f(slot_q)} circle[radius=5];')
+        A.append(f'\\draw[rodghost] {f(q)} circle[radius={R:g}];')
+    A.append(f'\\draw[rodghost] {f(slot_q)} circle[radius={R:g}];')
     A.append('\\node at (-22,2) {$P$};')
     A.append('\\node[anchor=west] at (46,-12) {$P\\oplus B_R$};')
     A.append('\\draw[motion,line width=.9pt] ' + ' -- '.join(f(p) for p in waypts) + ';')
     A.append(f'\\fill[motionteal] {f(waypts[0])} circle(1.3pt);')
     A.append(f'\\draw[force] {f(waypts[-1])} -- {f(pocket_q - [0, 5.6])};')
     A.append(
-        f'\\draw[draw=forceorange,fill=forceorange!12] {f(pocket_q)} circle[radius=5]; \\fill[forceorange] {f(pocket_q)} circle(1.3pt);'
+        f'\\draw[draw=forceorange,fill=forceorange!12] {f(pocket_q)} circle[radius={R:g}]; \\fill[forceorange] {f(pocket_q)} circle(1.3pt);'
     )
     A.append('\\node[anchor=east] at (-9,-27) {reachable};')
     A.append('\\node[anchor=south] at (11,25) {closed};')
@@ -73,15 +73,17 @@ def figure():
     ]
     B.append('\\node at (-16,2) {$P$};')
     s0 = np.array([-62.0, 40])
-    B.append(f'\\draw[draw=forceorange] {f(s0)} circle[radius=5]; \\draw[rodghost] {f(s0 + qb - qa)} circle[radius=5];')
+    B.append(
+        f'\\draw[draw=forceorange] {f(s0)} circle[radius={R:g}]; \\draw[rodghost] {f(s0 + qb - qa)} circle[radius={R:g}];'
+    )
     B.append(f'\\draw[black!40,line width=.4pt] {f(s0)} -- {f(s0 + qb - qa)};')
     wp = [s0, np.array([-53.0, 33]), np.array([-43.0, 27])]
     B.append('\\draw[motion,line width=.9pt] ' + ' -- '.join(f(p) for p in wp) + ';')
     B.append(f'\\draw[force] {f(wp[-1])} -- {f(qa + np.array([-0.4, 0.6]))};')
     B.append(
-        f'\\draw[draw=forceorange,fill=forceorange!12] {f(qa)} circle[radius=5]; \\fill[forceorange] {f(qa)} circle(1.3pt);'
+        f'\\draw[draw=forceorange,fill=forceorange!12] {f(qa)} circle[radius={R:g}]; \\fill[forceorange] {f(qa)} circle(1.3pt);'
     )
-    B.append(f'\\draw[feature] {f(qb)} circle[radius=5]; \\fill {f(qb)} circle(.6pt);')
+    B.append(f'\\draw[feature] {f(qb)} circle[radius={R:g}]; \\fill {f(qb)} circle(.6pt);')
     B.append(f'\\draw[black!40,line width=.4pt] {f(qa)} -- {f(qb)};')
     B.append(
         '\\node[anchor=south west,inner sep=1pt] at (-34,22) {$\\mathbf q_a$}; \\node[anchor=east] at (-50,9) {$\\mathbf q_b$};'

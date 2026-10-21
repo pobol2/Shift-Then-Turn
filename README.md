@@ -49,11 +49,11 @@ python -m pip install -r requirements.txt
 ## Commands
 
 `python -m simulation` lists its commands; append `--help` to any of them. `run` writes
-to `results/` (overwriting the saved runs); `tables`, `figures` and `python -m geometry`
+to `results/` (use `--overwrite` to replace saved runs); `tables`, `figures` and `python -m geometry`
 write into `paper/`. In the order used for the paper:
 
 ```powershell
-python -m simulation run        # 367 MuJoCo runs -> results/simulation.json (about 2 min, 6 workers)
+python -m simulation run --overwrite # 367 MuJoCo runs -> results/simulation.json (about 2 min, 6 workers)
 python -m simulation tables     # paper/tables/sim-turn.tex, sim-sensing.tex
 python -m simulation figures    # paper/figures/sim-shift.tex, sim-turn.tex
 python -m geometry              # paper/figures/tworod-example.tex, holding.tex, approach.tex

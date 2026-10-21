@@ -8,15 +8,12 @@
 import numpy as np
 from scipy.optimize import brentq
 
-D0 = np.array([20.0, -5.0])
+from geometry.construction import Q
+
+from .core import D0, RHO_MM
+
 S = float(np.linalg.norm(D0))
-RHO = 2.0
 K0 = 48.507125  # R(alpha_a + alpha_b) - d0_hat^T P_i for the 80 x 30 mm plate
-
-
-def Q(a):
-    c, s = np.cos(a), np.sin(a)
-    return np.array([[c, -s], [s, c]])
 
 
 def relax(lam, e, n=400):
@@ -27,7 +24,7 @@ def relax(lam, e, n=400):
     for k in range(1, n):
         ds = s[k] - s[k - 1]
         L = lam - 0.5 * (s[k] + s[k - 1])
-        th[k] = th[k - 1] + ds * (e - K * th[k - 1]) / (L**2 + RHO**2)
+        th[k] = th[k - 1] + ds * (e - K * th[k - 1]) / (L**2 + RHO_MM**2)
     return s, np.degrees(th)
 
 
@@ -36,9 +33,9 @@ def slip(rho, l, Delta=np.pi / 2, n=2000):
     ellipsoidal limit surface integrated without linearization."""
     if rho == 0:
         return 0.0
-    qw = np.array([-20.0 - l, 20.0])
-    r0 = np.array([-20.0, 5.0])
-    gy = 5.0
+    qw = np.array([-D0[0] - l, 20.0])
+    r0 = -D0
+    gy = -D0[1]
     th = 0.0
     for k in range(1, n + 1):
         r = qw + Q(k / n * Delta) @ (r0 - qw)

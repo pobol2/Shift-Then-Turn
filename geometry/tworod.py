@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from .construction import Q, design
+from simulation.core import ROD_RADIUS_MM as R
 
-P = np.array([[-34, -17], [30, -21], [46, 2], [18, 22], [-40, 13]], float)
-R = 5
-Delta = np.radians(80)
-d = np.array([6, 18.0])
-lam = 34
+from .construction import Q, design
+from .examples import DELTA as Delta
+from .examples import LAMBDA as lam
+from .examples import D as d
+from .examples import P
 
 
 def figure():
@@ -31,7 +31,7 @@ def figure():
 
     def rods():
         return '\n'.join(
-            [f'  \\draw[feature] {f(q)} circle[radius={R}]; \\fill {f(q)} circle(.6pt);' for q in (qa, qb)]
+            [f'  \\draw[feature] {f(q)} circle[radius={R:g}]; \\fill {f(q)} circle(.6pt);' for q in (qa, qb)]
         )
 
     w = (na + nb) / np.linalg.norm(na + nb)
